@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Existential Toast</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f3f4f6;
+            /* Cool Gray 100 */
+            color: #1f2937;
+            /* Cool Gray 800 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Center vertically */
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        .main-container {
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        h1,
+        h2 {
+            color: #4b5563;
+            /* Cool Gray 600 */
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        h2 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #374151;
+            /* Cool Gray 700 */
+        }
+
+        button {
+            /* General button styling */
+            padding: 10px 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            margin: 5px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        button:active:not(:disabled) {
+            transform: scale(0.97);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        button:disabled {
+            background-color: #cccccc !important;
+            /* Ensure disabled style overrides */
+            color: #666666 !important;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Bread Selection Styles */
+        #bread-selection-view {
+            margin-bottom: 30px;
+        }
+
+        .bread-option-btn {
+            background-color: #e5e7eb;
+            /* Gray 200 */
+            color: #374151;
+            /* Gray 700 */
+            width: 100px;
+        }
+
+        .bread-option-btn:hover {
+            background-color: #d1d5db;
+            /* Gray 300 */
+        }
+
+        .bread-option-btn.selected {
+            background-color: #a5b4fc;
+            /* Indigo 300 */
+            color: #3730a3;
+            /* Indigo 800 */
+            font-weight: bold;
+        }
+
+        /* Toaster Styles */
+        #toaster {
+            width: 180px;
+            height: 140px;
+            background: linear-gradient(to bottom, #d1d5db, #9ca3af);
+            /* Toaster gradient */
+            border: 4px solid #4b5563;
+            border-radius: 15px 15px 5px 5px;
+            position: relative;
+            margin: 30px auto;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.4), 0 5px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        #toast {
+            /* Base styles for all toast types */
+            position: absolute;
+            bottom: 60px;
+            /* Initial position: halfway visible */
+            left: 50%;
+            transform: translateX(-50%);
+            transition: background-color 0.3s linear, bottom 0.4s ease-in-out, border-color 0.3s linear;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+            z-index: 1;
+            /* Default dimensions and border-radius (overridden by specific types) */
+            width: 100px;
+            height: 110px;
+            border-radius: 8px 8px 2px 2px;
+        }
+
+        /* Bread Type Visual Styles */
+        #toast.bread-white {
+            width: 100px;
+            height: 110px;
+            /* Rectangular */
+            border-radius: 8px 8px 2px 2px;
+            background-color: #f5e8c6;
+            border: 3px solid #d2b48c;
+        }
+
+        #toast.bread-wheat {
+            width: 100px;
+            height: 110px;
+            /* Rectangular */
+            border-radius: 8px 8px 2px 2px;
+            background-color: #e2d8c0;
+            border: 3px solid #b0a080;
+        }
+
+        #toast.bread-bagel {
+            width: 100px;
+            height: 100px;
+            /* Make width/height equal for circle */
+            background-color: #f8f0d8;
+            border: 3px solid #e0c8a0;
+            border-radius: 50%;
+            /* Make it circular */
+            position: relative;
+            /* Needed for pseudo-element positioning */
+            overflow: hidden;
+            /* Ensure pseudo-element doesn't overflow */
+        }
+
+        /* Add the hole using a pseudo-element */
+        #toast.bread-bagel::after {
+            content: '';
+            display: block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 35px;
+            /* Size of the hole */
+            height: 35px;
+            /* Background matches the middle of the toaster gradient */
+            background-color: #b6bec7;
+            border-radius: 50%;
+            /* Make hole circular */
+            /* Optional: Add subtle shadow to make hole look inset */
+            box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+            /* Ensure hole is above the main bagel background */
+        }
+
+
+        /* Class added when toasting to hide the toast */
+        #toast.toasting {
+            bottom: -115px;
+            /* Position fully below the visible slot */
+        }
+
+
+        /* Controls and Display Styles */
+        #toast-controls button#toast-button {
+            /* Specific styling for main button */
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            background-color: #ef4444;
+            /* Red 500 */
+            color: white;
+            width: 180px;
+            margin: 15px auto;
+            display: block;
+        }
+
+        #toast-controls button#toast-button:hover:not(:disabled) {
+            background-color: #dc2626;
+            /* Red 600 */
+        }
+
+        #reset-toast-button {
+            background-color: #f97316;
+            /* Orange 500 */
+            color: white;
+            margin-top: 10px;
+            display: none;
+            /* Hidden initially */
+            width: 180px;
+            /* Match toast button */
+        }
+
+        #reset-toast-button:hover:not(:disabled) {
+            background-color: #ea580c;
+            /* Orange 600 */
+        }
+
+        /* Button to go back to bread selection */
+        #change-bread-button {
+            background-color: #6b7280;
+            /* Gray 500 */
+            color: white;
+            margin-top: 10px;
+            width: 180px;
+            /* Match toast button */
+        }
+
+        #change-bread-button:hover:not(:disabled) {
+            background-color: #4b5563;
+            /* Gray 600 */
+        }
+
+
+        #thoughts-display,
+        #outcome-display {
+            margin-top: 20px;
+            font-style: italic;
+            color: #6b7280;
+            /* Cool Gray 500 */
+            min-height: 30px;
+            padding: 0 10px;
+            font-size: 1rem;
+        }
+
+        #outcome-display {
+            font-weight: bold;
+            font-style: normal;
+            color: #1f2937;
+            /* Cool Gray 800 */
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: #f3f4f6;
+            /* Light background for outcome */
+            min-height: 40px;
+            /* Ensure space for outcome text */
+        }
+
+        /* Style outcome based on result */
+        #outcome-display.underdone {
+            background-color: #fef3c7;
+            color: #ca8a04;
+        }
+
+        /* Amber */
+        #outcome-display.lightly-toasted {
+            background-color: #fef9c3;
+            color: #a16207;
+        }
+
+        /* Yellow */
+        #outcome-display.perfect {
+            background-color: #dcfce7;
+            color: #16a34a;
+        }
+
+        /* Green */
+        #outcome-display.overdone {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+
+        /* Red */
+        #outcome-display.burnt {
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
+
+        /* Gray */
+
+        .link-home {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: black;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-style: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <a class="link-home" href="index.html">HOME PAGE</a>
+    <div class="main-container">
+        <h1>Existential Toast</h1>
+
+        <div id="bread-selection-view">
+            <h2>Choose Your Bread's Destiny:</h2>
+            <button class="bread-option-btn" data-bread="white">White</button>
+            <button class="bread-option-btn" data-bread="wheat">Wheat</button>
+            <button class="bread-option-btn" data-bread="bagel">Bagel</button>
+        </div>
+
+        <div id="game-view" class="hidden">
+            <p id="instruction-text">Hold the button to toast your <span id="selected-bread-text">bread</span>. Release
+                when you think it's ready!</p>
+
+            <div id="toaster">
+                <div id="toast"></div>
+            </div>
+
+            <div id="toast-controls">
+                <button id="toast-button">Hold to Toast</button>
+                <button id="reset-toast-button">Start New Slice</button>
+                <button id="change-bread-button">Change Bread</button>
+            </div>
+
+            <div id="thoughts-display">(Press and hold the button to begin the cycle...)</div>
+            <div id="outcome-display"></div>
+        </div>
+
+    </div>
+    <script>
+        // --- DOM Elements ---
+        const breadSelectionView = document.getElementById('bread-selection-view');
+        const gameView = document.getElementById('game-view');
+        const breadOptionButtons = document.querySelectorAll('.bread-option-btn');
+        const selectedBreadTextElement = document.getElementById('selected-bread-text');
+
+        const toastElement = document.getElementById('toast');
+        const toastButton = document.getElementById('toast-button');
+        const thoughtsDisplay = document.getElementById('thoughts-display');
+        const outcomeDisplay = document.getElementById('outcome-display');
+        const resetButton = document.getElementById('reset-toast-button');
+        const changeBreadButton = document.getElementById('change-bread-button');
+
+
+        // --- Constants and State ---
+        const existentialThoughts = [
+            "What is my purpose? To be warm?", "Am I defined solely by my crust?",
+            "The coils... they glow with such intense purpose... or is it just heat?",
+            "Will I ever achieve the perfect, elusive golden brown?",
+            "Is burning the ultimate transformation, or just... failure?",
+            "Darkness approaches... or is it just char?", "What lies beyond the confines of this metallic slot?",
+            "Crumbs... are they memories shed, or potential futures?", "To pop, or not to pop? That is the question.",
+            "I feel... warmer. Is this... meaning? Or just thermodynamics?", "Does the butter dream of me?",
+            "Am I destined for jam, or the lonely void of the plate?", "Each second brings me closer to... what exactly?",
+            "Is this heat a trial, or a becoming?"
+        ];
+
+        // Define toasting rates for different breads
+        const BREAD_TOAST_RATES = {
+            white: 0.8, // Base rate
+            wheat: 0.9, // Toasts slightly faster
+            bagel: 0.7  // Toasts slightly slower
+        };
+        let currentToastRate = BREAD_TOAST_RATES.white; // Default rate
+
+        const MAX_DARKNESS = 110; // Point beyond which it's definitely burnt
+        const THOUGHT_INTERVAL_MS = 4000; // How often thoughts change
+        const UPDATE_INTERVAL_MS = 100; // How often darkness/visuals update
+
+        let selectedBreadType = 'white'; // Default bread type
+        let darkness = 0; // 0 = untoasted, 100 = burnt threshold
+        let toastingInterval = null; // For increasing darkness
+        let thoughtInterval = null; // For changing thoughts
+        let isToasting = false;
+        let hasPopped = false; // Has the current toast cycle finished?
+
+        // --- Core Functions ---
+
+        /**
+         * Updates the visual appearance (background color) of the toast based on darkness.
+         * The base color depends on the selected bread type class.
+         */
+        function updateToastVisual() {
+            let baseColor, borderColor, targetColor1, targetColor2, targetColor3;
+
+            // Define colors based on selected bread type
+            switch (selectedBreadType) {
+                case 'wheat':
+                    baseColor = "#e2d8c0"; borderColor = "#b0a080";
+                    targetColor1 = "#c1b088"; targetColor2 = "#8b5a2b"; targetColor3 = "#4a3d2a";
+                    break;
+                case 'bagel':
+                    baseColor = "#f8f0d8"; borderColor = "#e0c8a0";
+                    targetColor1 = "#e0c8a0"; targetColor2 = "#a17b4d"; targetColor3 = "#5a4d3a";
+                    break;
+                case 'white':
+                default:
+                    baseColor = "#f5e8c6"; borderColor = "#d2b48c";
+                    targetColor1 = "#d2b48c"; targetColor2 = "#8b4513"; targetColor3 = "#3a2d1a";
+                    break;
+            }
+
+            let finalColor;
+            // Simple color transition: base -> target1 -> target2 -> target3 -> burnt
+            if (darkness < 30) { // Lightly toasted
+                const factor = darkness / 30;
+                finalColor = interpolateColor(baseColor, targetColor1, factor);
+            } else if (darkness < 70) { // Medium toast
+                const factor = (darkness - 30) / 40;
+                finalColor = interpolateColor(targetColor1, targetColor2, factor);
+            } else if (darkness < 100) { // Getting burnt
+                const factor = (darkness - 70) / 30;
+                finalColor = interpolateColor(targetColor2, targetColor3, factor);
+            } else { // Burnt
+                finalColor = '#1c1c1c'; // Very dark gray/black
+            }
+            toastElement.style.backgroundColor = finalColor;
+            // Update border color to match base for consistency
+            // toastElement.style.borderColor = borderColor; // This might interfere with bagel hole, keep simple
+        }
+
+        /** Helper function to interpolate between two hex colors. */
+        function interpolateColor(color1, color2, factor) {
+            factor = Math.max(0, Math.min(1, factor));
+            const c1 = parseInt(color1.substring(1), 16);
+            const c2 = parseInt(color2.substring(1), 16);
+            const r1 = (c1 >> 16) & 255; const g1 = (c1 >> 8) & 255; const b1 = c1 & 255;
+            const r2 = (c2 >> 16) & 255; const g2 = (c2 >> 8) & 255; const b2 = c2 & 255;
+            const r = Math.round(r1 + factor * (r2 - r1));
+            const g = Math.round(g1 + factor * (g2 - g1));
+            const b = Math.round(b1 + factor * (b2 - b1));
+            return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).padStart(6, '0')}`;
+        }
+
+        /** Displays a random existential thought. */
+        function displayThought() {
+            const randomIndex = Math.floor(Math.random() * existentialThoughts.length);
+            thoughtsDisplay.textContent = existentialThoughts[randomIndex];
+        }
+
+        /** Starts the toasting process: Hides toast and starts timers. */
+        function startToasting() {
+            if (isToasting || hasPopped) return;
+            isToasting = true;
+            toastButton.textContent = "Toasting...";
+            toastButton.disabled = true;
+            setTimeout(() => { toastButton.disabled = false; }, 100);
+            outcomeDisplay.textContent = ''; outcomeDisplay.className = '';
+            toastElement.classList.add('toasting'); // Animate toast down
+            displayThought();
+            thoughtInterval = setInterval(displayThought, THOUGHT_INTERVAL_MS);
+            toastingInterval = setInterval(() => {
+                darkness += currentToastRate; // Use the rate for the selected bread
+                updateToastVisual();
+                if (darkness >= MAX_DARKNESS) stopToasting();
+            }, UPDATE_INTERVAL_MS);
+        }
+
+        /** Stops the toasting process: Reveals toast and shows outcome. */
+        function stopToasting() {
+            if (!isToasting || hasPopped) return;
+            isToasting = false; hasPopped = true;
+            clearInterval(toastingInterval); clearInterval(thoughtInterval);
+            toastingInterval = null; thoughtInterval = null;
+            toastButton.textContent = "Hold to Toast"; toastButton.disabled = true;
+            thoughtsDisplay.textContent = '(The cycle is complete. The toast reveals itself!)';
+            resetButton.style.display = 'block'; changeBreadButton.style.display = 'block'; // Show both buttons
+            toastElement.classList.remove('toasting'); // Animate toast back up
+            determineOutcome();
+        }
+
+        /** Determines and displays the final outcome message. */
+        function determineOutcome() {
+            let outcome = ''; let outcomeClass = '';
+            // Thresholds remain the same, but time to reach them varies by bread
+            if (darkness < 10) { outcome = "Barely warm. Anxious. Still doughy within. (Underdone)"; outcomeClass = 'underdone'; }
+            else if (darkness < 35) { outcome = "A gentle warmth, a hint of gold. The potential is there. (Lightly Toasted)"; outcomeClass = 'lightly-toasted'; }
+            else if (darkness < 65) { outcome = "Perfectly golden brown. A state of toasted nirvana achieved. (Perfect)"; outcomeClass = 'perfect'; }
+            else if (darkness < 95) { outcome = "Charred edges, a bitter aroma. The darkness creeps in. (Overdone)"; outcomeClass = 'overdone'; }
+            else { outcome = "Burnt to a crisp. Only carbon remains. An existential void. (Burnt!)"; outcomeClass = 'burnt'; }
+            setTimeout(() => {
+                outcomeDisplay.textContent = `Outcome: ${outcome}`;
+                outcomeDisplay.className = outcomeClass;
+            }, 400); // Delay matches animation
+        }
+
+        /** Resets the game state for a new slice of the CURRENT bread type. */
+        function resetToast() {
+            darkness = 0; isToasting = false; hasPopped = false;
+            clearInterval(toastingInterval); clearInterval(thoughtInterval);
+            toastingInterval = null; thoughtInterval = null;
+
+            // Set toast rate for the selected bread
+            currentToastRate = BREAD_TOAST_RATES[selectedBreadType] || BREAD_TOAST_RATES.white;
+
+            // Ensure correct visual class and reset position/color
+            // Clear existing bread classes before adding the new one
+            toastElement.classList.remove('bread-white', 'bread-wheat', 'bread-bagel');
+            toastElement.classList.add('bread-' + selectedBreadType); // Set class based on selection
+            updateToastVisual(); // Reset toast color based on class/darkness=0
+
+            thoughtsDisplay.textContent = '(Press and hold the button to begin the cycle...)';
+            outcomeDisplay.textContent = ''; outcomeDisplay.className = '';
+            toastButton.textContent = "Hold to Toast"; toastButton.disabled = false;
+            resetButton.style.display = 'none'; // Hide until cycle completes
+            changeBreadButton.style.display = 'block'; // Keep change bread visible
+        }
+
+        /** Handles selection of a bread type */
+        function selectBread(breadType) {
+            selectedBreadType = breadType;
+
+            // Update instruction text
+            let breadName = breadType.charAt(0).toUpperCase() + breadType.slice(1); // Capitalize
+            selectedBreadTextElement.textContent = breadName.toLowerCase();
+
+            // Update toast visual class
+            // Clear existing bread classes first
+            toastElement.classList.remove('bread-white', 'bread-wheat', 'bread-bagel');
+            toastElement.classList.add('bread-' + selectedBreadType);
+
+            // Hide selection view, show game view
+            breadSelectionView.classList.add('hidden');
+            gameView.classList.remove('hidden');
+
+            // Reset the game state for the newly selected bread
+            resetToast();
+        }
+
+        /** Shows the bread selection screen */
+        function showBreadSelection() {
+            gameView.classList.add('hidden');
+            breadSelectionView.classList.remove('hidden');
+            // Optional: De-select visual state of buttons if implemented
+            // breadOptionButtons.forEach(btn => btn.classList.remove('selected'));
+        }
+
+
+        // --- Event Listeners ---
+        function setupEventListeners() {
+            // Bread selection buttons
+            breadOptionButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    selectBread(button.getAttribute('data-bread'));
+                });
+            });
+
+            // Toasting controls
+            toastButton.addEventListener('mousedown', startToasting);
+            toastButton.addEventListener('touchstart', (e) => { e.preventDefault(); startToasting(); });
+            toastButton.addEventListener('mouseup', stopToasting);
+            toastButton.addEventListener('mouseleave', () => { if (isToasting) stopToasting(); });
+            toastButton.addEventListener('touchend', (e) => { e.preventDefault(); stopToasting(); });
+
+            // Reset and Change Bread buttons
+            resetButton.addEventListener('click', resetToast); // Resets current bread
+            changeBreadButton.addEventListener('click', showBreadSelection); // Goes back to selection
+        }
+
+        // --- Initialization ---
+        window.onload = () => {
+            setupEventListeners();
+            // Start by showing the bread selection view
+            showBreadSelection();
+        };
+
+    </script>
+
+</body>
+
+</html>

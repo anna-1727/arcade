@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dino Catapult</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 15px;
+            background-color: #1e3f66; /* Deep space blue */
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1{
+            color: white;
+            text-align: center;
+        } 
+        h2 {
+            color: #000000; /* Gold accent */
+            text-align: center;
+        }
+
+        /* Shared container styles (used by settings) */
+        .container {
+            background-color: #73a5c6;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px; /* Limit width */
+        }
+
+        /* Settings Area */
+        #settings-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px 25px;
+            margin-bottom: 20px;
+            align-items: end;
+        }
+
+        .setting {
+            display: flex;
+            flex-direction: column;
+        }
+        .setting-width {
+             grid-column: span 1;
+        }
+
+
+        label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #000000;
+        }
+
+        input[type="range"], select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #4a4e69;
+            background-color: #2a2f4a;
+            color: #e0e0e0;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+         input[type="range"] { padding: 0; cursor: pointer; }
+        select { cursor: pointer; }
+
+        .value-display {
+            font-size: 0.9em;
+            color: #1b1b1b;
+            min-height: 1.2em;
+            text-align: right;
+        }
+
+        /* Meteor Preview Styles */
+        #meteor-preview-area {
+            text-align: center;
+            padding: 10px;
+            background-color: #2a2f4a;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        #meteor-preview {
+            width: 50px; height: 50px;
+            background-color: #8b4513; border-radius: 50%;
+            margin-top: 5px;
+            transition: width 0.2s ease, height 0.2s ease, background-color 0.2s ease;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+        }
+        #meteor-preview-area label {
+            font-size: 0.9em; color: #ffffff; margin-bottom: 5px;
+        }
+
+
+        #launch-button {
+            grid-column: 1 / -1; padding: 12px 25px; font-size: 1.2rem;
+            cursor: pointer; background-color: #f05c5c; color: white;
+            border: none; border-radius: 8px;
+            transition: background-color 0.2s ease; margin-top: 15px;
+        }
+        #launch-button:hover { background-color: #d03c3c; }
+        #launch-button:disabled { background-color: #555; cursor: not-allowed; }
+
+
+        /* Game Area */
+        #game-view-wrapper {
+             position: relative; width: 100%; display: flex;
+             justify-content: center; overflow: hidden;
+             /* height set by JS in init */
+             background-color: #0e101c; border-radius: 5px;
+        }
+        #game-view {
+            display: flex; flex-direction: column; align-items: center;
+            position: relative; width: fit-content;
+        }
+
+        #game-canvas {
+            border-radius: 5px; max-width: 100%; display: block;
+            background-color: transparent; /* Make canvas transparent */
+        }
+
+        /* Earth Visual Fill Styles */
+        #earth-visual-fill {
+            position: absolute; left: 0; width: 100%;
+            background-color: #6a994e; z-index: 0;
+            border-radius: 0 0 5px 5px;
+            /* Height and Top set dynamically by JS */
+        }
+
+
+        #game-message {
+            position: absolute; top: 40%; left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9); color: #1f233a;
+            padding: 20px 30px; border-radius: 8px;
+            font-size: 1.5rem; font-weight: bold; text-align: center;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5); z-index: 10;
+        }
+
+        #reset-button {
+             padding: 10px 20px; font-size: 1rem; cursor: pointer;
+             background-color: #5c85f0; color: white; border: none;
+             border-radius: 8px; transition: background-color 0.2s ease;
+             margin-top: 20px; /* Added space above button inside message box */
+             display: block; /* Ensure it takes its own line */
+             margin-left: auto; /* Center button within message box */
+             margin-right: auto;
+        }
+         #reset-button:hover { background-color: #3c65d0; }
+
+        .hidden {
+            display: none !important; /* Use !important to ensure override */
+        }
+
+        .link-home {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: rgb(255, 255, 255);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-style: bold;
+        }
+    </style>
+</head>
+<body>
+    <a class="link-home" href="index.html">HOME PAGE</a>
+    <h1>Dino Catapult</h1>
+
+    <div id="settings-container" class="container hidden">
+        <h2>Build Your Meteor</h2>
+        <div id="settings-view">
+            <div class="setting">
+                <label for="composition">Composition:</label>
+                <select id="composition">
+                    <option value="ice">Ice (Low Density)</option>
+                    <option value="rock" selected>Rock (Medium Density)</option>
+                    <option value="iron">Iron (High Density)</option>
+                </select>
+                 <span class="value-display"></span> </div>
+            <div class="setting">
+                <label for="velocity">Velocity (0-100):</label>
+                <input type="range" id="velocity" min="0" max="100" value="50" step="1">
+                <span class="value-display" id="velocity-val">50</span>
+            </div>
+            <div class="setting">
+                 <label for="angle">Approach Angle (0-100):</label>
+                <input type="range" id="angle" min="0" max="100" value="50" step="1">
+                 <span class="value-display" id="angle-val">50</span>
+            </div>
+             <div class="setting setting-width">
+                 <label for="width">Width / Size (0-100):</label>
+                <input type="range" id="width" min="0" max="100" value="50" step="1">
+                 <span class="value-display" id="width-val">50</span>
+            </div>
+            <div id="meteor-preview-area">
+                 <label>Meteor Preview:</label>
+                 <div id="meteor-preview"></div>
+            </div>
+        </div>
+        <button id="launch-button">Launch Meteor!</button>
+    </div>
+
+    <div id="game-view-wrapper" class="hidden">
+         <div id="earth-visual-fill"></div>
+         <div id="game-view">
+             <canvas id="game-canvas"></canvas>
+             <div id="game-message" class="hidden">
+                  <button id="reset-button" class="hidden">Build New Meteor</button>
+             </div>
+         </div>
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+    <script>
+        // --- DOM Elements ---
+        const settingsContainer = document.getElementById('settings-container');
+        const gameViewWrapper = document.getElementById('game-view-wrapper');
+        const views = { settings: settingsContainer, game: gameViewWrapper };
+        const gameView = document.getElementById('game-view');
+        const canvas = document.getElementById('game-canvas');
+        const earthVisualFill = document.getElementById('earth-visual-fill');
+        const gameMessage = document.getElementById('game-message');
+        const resetButton = document.getElementById('reset-button');
+        const launchButton = document.getElementById('launch-button');
+        const meteorPreview = document.getElementById('meteor-preview');
+        const compositionSelect = document.getElementById('composition');
+        const velocitySlider = document.getElementById('velocity');
+        const angleSlider = document.getElementById('angle');
+        const widthSlider = document.getElementById('width');
+        const velocityVal = document.getElementById('velocity-val');
+        const angleVal = document.getElementById('angle-val');
+        const widthVal = document.getElementById('width-val');
+
+        // --- Matter.js Modules ---
+        const { Engine, Render, Runner, World, Bodies, Body, Events, Constraint, Composite, Vector } = Matter;
+
+        // --- Game State & Config ---
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 600;
+        const EARTH_WIDTH = CANVAS_WIDTH;
+        const EARTH_HEIGHT = 60;
+        const EARTH_Y_POS = CANVAS_HEIGHT - 150;
+        const DINOSAUR_COUNT = 20;
+        const MAX_ANGULAR_VELOCITY = 0.35;
+        const IMPACT_TIMEOUT_MS = 5000;
+
+        const dinoImageUrls = [
+            'https://png.pngtree.com/png-clipart/20221009/ourmid/pngtree-velociraptor-dinosaur-png-image_6293751.png',
+            'https://png.pngtree.com/png-vector/20240608/ourmid/pngtree-cartoon-raptor-dinosaur-character-velociraptor-png-image_12645902.png',
+            'https://png.pngtree.com/png-vector/20221019/ourmid/pngtree-cartoon-funny-pterodactyl-dinosaur-flying-png-image_6327219.png',
+            'https://png.pngtree.com/png-clipart/20230411/ourmid/pngtree-cute-brown-triceratops-illustration-png-image_6699430.png',
+            'https://images.vexels.com/media/users/3/280498/isolated/preview/d6195511f435f27214a10c04bdd11a96-baby-stegosaurus-dinosaur-color-stroke.png'
+        ];
+        function getRandomDinoImageUrl() { return dinoImageUrls[Math.floor(Math.random() * dinoImageUrls.length)]; }
+
+        let engine; let render; let runner; let world; let flatEarth;
+        let dinosaurs = []; let meteor = null; let impactTimeoutHandle = null; let gameEnded = false;
+
+        const COMPOSITION_PROPS = {
+             ice: { density: 0.0005, color: '#a0d2eb' }, rock: { density: 0.001, color: '#8b4513' },
+             iron: { density: 0.002, color: '#6c757d' }
+         };
+        const DINO_FRICTION = 0.8; const EARTH_FRICTION = 0.9; const EARTH_COLOR = '#6a994e';
+
+        // --- Helper Functions ---
+        function degreesToRadians(degrees) { return degrees * (Math.PI / 180); }
+        function updateValueDisplay(slider, display, unit = '') { display.textContent = slider.value + unit; }
+        function scaleVelocity(v) { return 5 + (v / 100) * 45; }
+        function scaleAngle(a) { return 5 + (a / 100) * 80; }
+        function scaleWidth(w) { return 5 + (w / 100) * 55; }
+
+        function showView(viewId) {
+            console.log("Switching to view:", viewId);
+            for (const id in views) {
+                if (views[id]) { views[id].classList.add('hidden'); }
+                else { console.error("View element not found for ID:", id); }
+            }
+            if (views[viewId]) { views[viewId].classList.remove('hidden'); }
+            else { console.error("Cannot show view, element not found for ID:", viewId);
+                 if(views.settings) views.settings.classList.remove('hidden'); }
+        }
+
+        // --- Game Object Creation ---
+        function createFlatEarth() {
+            flatEarth = Bodies.rectangle(CANVAS_WIDTH / 2, EARTH_Y_POS, EARTH_WIDTH, EARTH_HEIGHT, {
+                isStatic: false, friction: EARTH_FRICTION, frictionStatic: 1.5,
+                density: 0.1, restitution: 0.1, render: { fillStyle: EARTH_COLOR },
+                chamfer: { radius: 5 }
+            });
+            const constraint = Constraint.create({
+                pointA: { x: CANVAS_WIDTH / 2, y: EARTH_Y_POS }, bodyB: flatEarth,
+                pointB: { x: 0, y: 0 }, stiffness: 1, length: 0, render: { visible: false }
+            });
+            World.add(world, [flatEarth, constraint]);
+        }
+
+        function createDinosaurs() {
+            dinosaurs = [];
+            const earthTopY = flatEarth.position.y - EARTH_HEIGHT / 2;
+            const earthLeftX = 0; const earthRightX = CANVAS_WIDTH;
+            for (let i = 0; i < DINOSAUR_COUNT; i++) {
+                const size = 10 + Math.random() * 15; // This is the physics body size
+
+                // ** UPDATED Scaling Factor Denominator **
+                // Adjust the '150' based on your actual image dimensions.
+                // Larger number = smaller dinosaurs; Smaller number = larger dinosaurs.
+                const spriteScaleFactor = size / 100;
+
+                const x = earthLeftX + size + Math.random() * (EARTH_WIDTH - size * 2);
+                const y = earthTopY - size;
+                const dino = Bodies.rectangle(x, y, size, size, {
+                    friction: DINO_FRICTION, frictionStatic: 1.2, restitution: 0.1,
+                    density: 0.001 + Math.random() * 0.0005, angle: Math.random() * Math.PI,
+                    // Ensure the physics body itself isn't rendered if sprite is used
+                    render: {
+                         //fillStyle: 'transparent', // Optional: hide physics body color
+                         //strokeStyle: 'transparent', // Optional: hide physics body outline
+                         sprite: {
+                             texture: getRandomDinoImageUrl(),
+                             xScale: spriteScaleFactor,
+                             yScale: spriteScaleFactor
+                         }
+                    }
+                });
+                dinosaurs.push(dino);
+            }
+            World.add(world, dinosaurs);
+        }
+
+        function createMeteor(composition, physicsVelocity, physicsAngleDeg, physicsRadius) {
+            const props = COMPOSITION_PROPS[composition] || COMPOSITION_PROPS.rock;
+            const density = props.density;
+            const impactX = flatEarth.position.x + EARTH_WIDTH * 0.4;
+            const impactY = flatEarth.position.y - EARTH_HEIGHT / 2;
+            const startX = CANVAS_WIDTH + physicsRadius + 50;
+            const startY = 0 - physicsRadius - 50;
+            meteor = Bodies.circle(startX, startY, physicsRadius, {
+                density: density, friction: 0.5, restitution: 0.2,
+                render: { fillStyle: props.color }
+            });
+            const directionVector = Vector.normalise(Vector.sub({x: impactX, y: impactY}, meteor.position));
+            const angleFactor = (physicsAngleDeg / 45);
+            const adjustedDirectionY = directionVector.y * angleFactor;
+            const finalDirection = Vector.normalise({x: directionVector.x, y: adjustedDirectionY});
+            const velocityMagnitude = physicsVelocity;
+            const velocityX = finalDirection.x * velocityMagnitude;
+            const velocityY = finalDirection.y * velocityMagnitude;
+            Body.setVelocity(meteor, { x: velocityX, y: velocityY });
+            Body.setAngularVelocity(meteor, (Math.random() - 0.5) * 0.1);
+            World.add(world, meteor);
+        }
+
+        // --- Game Logic ---
+
+        function setupPhysics() {
+            engine = Engine.create();
+            world = engine.world;
+            engine.world.gravity.y = 0;
+            render = Render.create({
+                canvas: canvas, engine: engine,
+                options: { width: CANVAS_WIDTH, height: CANVAS_HEIGHT, wireframes: false, background: 'transparent' }
+            });
+            runner = Runner.create();
+            Render.run(render);
+        }
+
+        function resetGame() {
+            console.log("Reset button clicked!");
+            gameEnded = false; clearTimeout(impactTimeoutHandle); impactTimeoutHandle = null;
+            if (runner && runner.enabled) Runner.stop(runner);
+            if (render) Render.stop(render);
+            showView('settings');
+            gameMessage.classList.add('hidden'); resetButton.classList.add('hidden');
+            launchButton.disabled = false;
+            console.log("Clearing physics world...");
+            if (world) { World.clear(world); Engine.clear(engine); }
+            console.log("Re-initializing physics and elements...");
+            setupPhysics(); createFlatEarth(); createDinosaurs(); meteor = null;
+            console.log("Restarting renderer...");
+            Render.run(render);
+            console.log("Updating preview...");
+            updateMeteorPreview();
+            console.log("Reset finished.");
+        }
+
+
+        function checkGameState() {
+             if (gameEnded || !meteor || !flatEarth) return;
+             if (Math.abs(flatEarth.angularVelocity) > MAX_ANGULAR_VELOCITY) {
+                 endGame("Catastrophic spin! The Flat Earth is lost to the void!"); return;
+             }
+             let dinosRemaining = 0;
+             const offScreenMargin = 50;
+             const bounds = { minX: -offScreenMargin, maxX: CANVAS_WIDTH + offScreenMargin, minY: -offScreenMargin, maxY: CANVAS_HEIGHT + offScreenMargin };
+             const earthTopY = flatEarth.position.y - EARTH_HEIGHT / 2;
+             for (const dino of dinosaurs) {
+                  if (dino.position.x > bounds.minX && dino.position.x < bounds.maxX &&
+                      dino.position.y < bounds.maxY && dino.position.y < earthTopY + EARTH_HEIGHT * 3) {
+                      dinosRemaining++;
+                  }
+             }
+             if (dinosRemaining === 0) { endGame("Success! You have caused a mass extinction!"); return; }
+
+             // Start timeout check
+              const meteorVelocity = Vector.magnitude(meteor.velocity);
+              const meteorOffScreen = meteor.position.y > CANVAS_HEIGHT + meteor.circleRadius || meteor.position.x < -meteor.circleRadius || meteor.position.x > CANVAS_WIDTH + meteor.circleRadius;
+              const meteorHit = meteor.position.y > flatEarth.position.y - EARTH_HEIGHT / 2;
+             if (!impactTimeoutHandle && (meteorOffScreen || (meteorHit && meteor.speed < 0.1))) {
+                  impactTimeoutHandle = setTimeout(() => {
+                      let currentDinosRemaining = 0;
+                       for (const dino of dinosaurs) {
+                            if (dino.position.x > bounds.minX && dino.position.x < bounds.maxX &&
+                                dino.position.y < bounds.maxY && dino.position.y < earthTopY + EARTH_HEIGHT * 3) {
+                                currentDinosRemaining++;
+                            }
+                       }
+                      if (!gameEnded && currentDinosRemaining > 0) { endGame("Impact too weak. The remaining dinosaurs mock your meteor."); }
+                  }, IMPACT_TIMEOUT_MS);
+             }
+        }
+
+        function endGame(message) {
+            if (gameEnded) return; gameEnded = true; clearTimeout(impactTimeoutHandle);
+            if (runner) Runner.stop(runner);
+            let textNode = gameMessage.firstChild;
+             while(textNode && textNode.nodeType !== 3 && textNode.nodeName !== 'BUTTON') { textNode = textNode.nextSibling; }
+             if(textNode && textNode.nodeType === 3) { textNode.textContent = message + " "; }
+             else { gameMessage.textContent = message + " "; gameMessage.appendChild(resetButton); }
+            gameMessage.classList.remove('hidden');
+            resetButton.classList.remove('hidden');
+            launchButton.disabled = true;
+        }
+
+
+        function launchMeteor() {
+            const rawVelocity = parseFloat(velocitySlider.value);
+            const rawAngle = parseFloat(angleSlider.value);
+            const rawWidth = parseFloat(widthSlider.value);
+            const composition = compositionSelect.value;
+            const physicsVelocity = scaleVelocity(rawVelocity);
+            const physicsAngleDeg = scaleAngle(rawAngle);
+            const physicsRadius = scaleWidth(rawWidth);
+
+            showView('game');
+            launchButton.disabled = true; gameMessage.classList.add('hidden');
+            resetButton.classList.add('hidden');
+
+            positionEarthVisualFill();
+
+            if (meteor) { World.remove(world, meteor); meteor = null; }
+            createMeteor(composition, physicsVelocity, physicsAngleDeg, physicsRadius);
+
+            if (!runner) runner = Runner.create();
+            Runner.run(runner, engine);
+
+            gameEnded = false; clearTimeout(impactTimeoutHandle); impactTimeoutHandle = null;
+            Events.off(engine, 'afterUpdate', checkGameState);
+            Events.on(engine, 'afterUpdate', checkGameState);
+        }
+
+        function updateMeteorPreview() {
+            const rawWidth = parseFloat(widthSlider.value);
+            const physicsRadius = scaleWidth(rawWidth);
+            const diameter = physicsRadius * 2;
+            const composition = compositionSelect.value;
+            const props = COMPOSITION_PROPS[composition] || COMPOSITION_PROPS.rock;
+            meteorPreview.style.width = `${diameter}px`;
+            meteorPreview.style.height = `${diameter}px`;
+            meteorPreview.style.backgroundColor = props.color;
+        }
+
+        function positionEarthVisualFill() {
+             const earthTopY = EARTH_Y_POS - EARTH_HEIGHT / 2;
+             const visualTop = earthTopY;
+             const visualHeight = CANVAS_HEIGHT - visualTop;
+             earthVisualFill.style.top = `${visualTop}px`;
+             earthVisualFill.style.height = `${visualHeight}px`;
+        }
+
+        // --- Initial Setup & Event Listeners ---
+        function init() {
+             gameViewWrapper.style.height = `${CANVAS_HEIGHT}px`;
+             setupPhysics(); createFlatEarth(); createDinosaurs(); Render.run(render);
+
+             velocitySlider.addEventListener('input', () => updateValueDisplay(velocitySlider, velocityVal));
+             angleSlider.addEventListener('input', () => updateValueDisplay(angleSlider, angleVal));
+             widthSlider.addEventListener('input', () => {
+                 updateValueDisplay(widthSlider, widthVal); updateMeteorPreview();
+             });
+             compositionSelect.addEventListener('change', updateMeteorPreview);
+
+             updateValueDisplay(velocitySlider, velocityVal);
+             updateValueDisplay(angleSlider, angleVal);
+             updateValueDisplay(widthSlider, widthVal);
+             updateMeteorPreview();
+
+             launchButton.addEventListener('click', launchMeteor);
+             resetButton.addEventListener('click', resetGame);
+
+             showView('settings'); // Start on settings view
+        }
+
+        window.onload = init;
+
+    </script>
+
+</body>
+</html>
