@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Secret of the Seven Llamas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=MedievalSharp&display=swap"
+        rel="stylesheet">
+    <style>
+        /* Custom Styles (Mostly unchanged) */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f1e9;
+            color: #4a3f35;
+        }
+
+        .journal-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #fffaf0;
+            border: 1px solid #d2b48c;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            position: relative;
+            min-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .background-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+            z-index: 0;
+            border-radius: 8px;
+            transition: background-image 0.5s ease-in-out;
+        }
+
+        .content-area {
+            position: relative;
+            z-index: 1;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-info-area {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 10;
+            background-color: rgba(255, 250, 240, 0.85);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid #d2b48c;
+            align-items: center;
+            display: none;
+            /* Hidden initially */
+        }
+
+        .llama-index,
+        .lives-display,
+        .hints-display {
+            text-align: center;
+        }
+
+        .llama-index h4,
+        .lives-display h4,
+        .hints-display h4 {
+            margin: 0 0 0.3rem 0;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #5a4a3a;
+            text-align: center;
+        }
+
+        .llama-dots {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .llama-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #d2b48c;
+            border: 1px solid #8b4513;
+        }
+
+        .llama-dot.solved {
+            background-color: #228b22;
+        }
+
+        .lives-count,
+        .hints-count {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #8b4513;
+        }
+
+        .lives-display span,
+        .hints-display span {
+            vertical-align: middle;
+        }
+
+        .llama-zone {
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .llama-image {
+            font-size: 6rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .riddle-text {
+            font-family: 'MedievalSharp', cursive;
+            font-size: 1.5rem;
+            margin: 1.5rem 0;
+            line-height: 1.7;
+            color: #5a4a3a;
+            max-width: 90%;
+        }
+
+        #hint-display-area {
+            min-height: 2em;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            font-style: italic;
+            color: #6a5a4a;
+            max-width: 80%;
+        }
+
+        .input-area {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .answer-input {
+            padding: 0.75rem 1rem;
+            border: 1px solid #d2b48c;
+            border-radius: 6px;
+            font-size: 1rem;
+            background-color: #fff;
+            color: #4a3f35;
+            width: 50%;
+            max-width: 280px;
+            box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .submit-button,
+        .hint-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease, opacity 0.3s ease;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+            color: #fffaf0;
+        }
+
+        .submit-button {
+            background-color: #8b4513;
+        }
+
+        .submit-button:hover {
+            background-color: #a0522d;
+        }
+
+        .hint-button {
+            background-color: #b8860b;
+        }
+
+        .hint-button:hover {
+            background-color: #daa520;
+        }
+
+        .submit-button:active,
+        .hint-button:active {
+            transform: translateY(1px);
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .hint-button:disabled {
+            background-color: #a9a9a9;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .feedback-message {
+            margin-top: 1rem;
+            font-weight: bold;
+            min-height: 1.5em;
+            width: 100%;
+        }
+
+        .feedback-correct {
+            color: #228b22;
+        }
+
+        .feedback-incorrect {
+            color: #b22222;
+        }
+
+        .intro-screen,
+        .final-screen,
+        .game-over-screen {
+            text-align: center;
+            padding: 3rem 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .intro-title {
+            font-family: 'MedievalSharp', cursive;
+            font-size: 2.5rem;
+            color: #8b4513;
+            margin-bottom: 0.5rem;
+        }
+
+        .intro-tagline {
+            font-size: 1.1rem;
+            font-style: italic;
+            color: #5a4a3a;
+            margin-bottom: 2rem;
+        }
+
+        .intro-text {
+            font-size: 1rem;
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .begin-button,
+        .play-again-button {
+            padding: 1rem 2.5rem;
+            background: linear-gradient(145deg, #a0522d, #8b4513);
+            color: #fffaf0;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 1rem;
+        }
+
+        .begin-button:hover,
+        .play-again-button:hover {
+            background: linear-gradient(145deg, #b86134, #a0522d);
+            box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .begin-button:active,
+        .play-again-button:active {
+            transform: translateY(0px);
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .final-screen ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: #5a4a3a;
+        }
+
+        .final-screen ul li {
+            margin-bottom: 0.3rem;
+        }
+
+        .bg-castle {
+            background-image: url('https://placehold.co/900x600/a9a9a9/ffffff?text=Castle+Silhouette');
+        }
+
+        .bg-opera {
+            background-image: url('https://placehold.co/900x600/8b0000/ffffff?text=Opera+Stage');
+        }
+
+        .bg-rave {
+            background-image: url('https://placehold.co/900x600/ff00ff/000000?text=Neon+Cave');
+        }
+
+        .bg-beach {
+            background-image: url('https://placehold.co/900x600/00ced1/ffffff?text=Tropical+Beach');
+        }
+
+        .bg-logic {
+            background-image: url('https://placehold.co/900x600/006400/ffffff?text=Logic+Grid');
+        }
+
+        /* New background for Logic Llama II */
+        .bg-stand {
+            background-image: url('https://placehold.co/900x600/ffff00/8b4513?text=Lemonade+Stand');
+        }
+
+        .bg-cottage {
+            background-image: url('https://placehold.co/900x600/deb887/ffffff?text=Cozy+Cottage');
+        }
+
+        .pattern-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+            justify-content: center;
+            min-height: 50px;
+            width: 100%;
+        }
+
+        .pattern-light {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #555;
+            border: 2px solid #333;
+            cursor: pointer;
+            transition: background-color 0.2s, box-shadow 0.2s;
+            opacity: 1;
+            pointer-events: none;
+        }
+
+        .pattern-light.lit {
+            background-color: #ffff00;
+            box-shadow: 0 0 15px 5px #ffff00;
+        }
+
+        .pattern-light.user-active {
+            background-color: #ffaa00;
+        }
+
+        .pattern-light.input-enabled {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .pattern-light:not(.input-enabled) {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        .visual-puzzle-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 1rem;
+            max-width: 320px;
+        }
+
+        .visual-item {
+            font-size: 2.5rem;
+            text-align: center;
+            cursor: default;
+            padding: 5px;
+            border: 1px solid transparent;
+        }
+
+        .game-area,
+        .final-screen,
+        .game-over-screen {
+            display: none;
+        }
+
+        @keyframes shake {
+            0% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            50% {
+                transform: translateX(5px);
+            }
+
+            75% {
+                transform: translateX(-3px);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        .animate-shake {
+            animation: shake 0.5s ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="journal-container">
+        <div id="background-overlay" class="background-overlay"></div>
+        <div class="content-area">
+
+            <div id="top-info-area" class="top-info-area">
+                <div id="llama-index" class="llama-index">
+                    <h4>Llamas</h4>
+                    <div id="llama-dots" class="llama-dots"></div>
+                </div>
+                <div id="lives-display" class="lives-display">
+                    <h4>Lives</h4>
+                    <div id="lives-count" class="lives-count"></div>
+                </div>
+                <div id="hints-display" class="hints-display">
+                    <h4>Hints</h4>
+                    <div id="hints-count" class="hints-count"></div>
+                </div>
+            </div>
+
+            <div id="intro-screen" class="intro-screen">
+                <h1 class="intro-title">The Secret of the Seven Llamas</h1>
+                <p class="intro-tagline">“Seven llamas. Seven riddles. One ridiculously dramatic secret.”</p>
+                <p class="intro-text">Legend speaks of seven sacred llamas, scattered across the realms. Each guards a
+                    riddle, randomly chosen for your journey.<br><br>You have 3 lives and 3 hints. Use them wisely!</p>
+                <button id="begin-button" class="begin-button">Begin the Journey</button>
+            </div>
+
+            <div id="game-over-screen" class="game-over-screen">
+                <h1 class="intro-title text-red-600">GAME OVER</h1>
+                <div class="text-6xl my-4">☠️</div>
+                <p class="intro-text text-lg">Alas, the llamas have bested you this time. Your journey ends here... for
+                    now.</p>
+                <button id="play-again-button" class="play-again-button">Try Again?</button>
+            </div>
+
+            <div id="game-area" class="game-area">
+                <div class="llama-zone">
+                    <div id="llama-image" class="llama-image"></div>
+                    <h2 id="llama-name" class="text-2xl font-bold mb-2">Llama Name</h2>
+                    <p id="llama-description" class="text-sm italic mb-4">Llama description</p>
+                    <p id="riddle-text" class="riddle-text">Riddle goes here...</p>
+                    <div id="hint-display-area"></div>
+                    <div id="special-puzzle-area" class="my-4 w-full flex justify-center"></div>
+                    <div class="input-area">
+                        <input type="text" id="answer-input" class="answer-input" placeholder="Your answer...">
+                        <button id="submit-button" class="submit-button">Submit</button>
+                        <button id="hint-button" class="hint-button">Hint 💡</button>
+                    </div>
+                    <p id="feedback-message" class="feedback-message"></p>
+                </div>
+            </div>
+
+            <div id="final-screen" class="final-screen">
+                <h2 class="intro-title">✨ The Secret is Revealed! ✨</h2>
+                <div class="text-4xl my-6">🏆🦙🏆</div>
+                <p class="riddle-text">"The true secret was inside you all along..."</p>
+                <p class="mb-6">"...But also, here’s a downloadable llama hat for your cursor!"</p>
+                <a href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAApklEQVQ4T2NkoDJgpLJ5DKMGUh+Y/v//P4b///8/AwPDf6+//w7///+fgYGB4T8U7+DgAB+/PvP/P3/+Mv3//3+G/w8MDMSGgQo6FrgAUPz/P3/+//8/w//v3z8GKgEWAPk/AwMDw38GBob/DAwM/w8MDMSHwQo6FmAAUPz///8M/P//P8P///8fAwMDw38GBob/DAwM/w8MDMSHwQo6FgYAAP///wf///8P////Z4Z///4z////Z4Y5GBgAACKgFE8AzQZEAAAAAElFTkSuQmCC"
+                    download="llama_cursor_hat.png" class="submit-button inline-block">Download Hat!</a>
+                <div class="mt-8 text-left max-w-xs w-full">
+                    <h3 class="font-bold text-center mb-2 text-lg">Credits</h3>
+                    <ul>
+                        <li><strong>Executive Producer:</strong> A Real Llama</li>
+                        <li><strong>Lead Riddle Writer:</strong> Sir Spit-a-Lot</li>
+                        <li><strong>Dramatic Consultant:</strong> Drama Llama</li>
+                        <li><strong>Chief Vibes Officer:</strong> No Probllama</li>
+                        <li><strong>Head of Security:</strong> Logic Llama II</li>
+                        <li><strong>Refreshments:</strong> Llamanade Inc.</li>
+                        <li><strong>Glowstick Coordinator:</strong> Glow Llama</li>
+                        <li><strong>Moral Support:</strong> Grandma Llama</li>
+                        <li><strong>Special Thanks:</strong> Your Brain</li>
+                    </ul>
+                </div>
+                <button id="restart-button-final" class="play-again-button mt-6">Play Again?</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        // (Unchanged from previous version)
+        const introScreen = document.getElementById('intro-screen');
+        const gameArea = document.getElementById('game-area');
+        const finalScreen = document.getElementById('final-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const beginButton = document.getElementById('begin-button');
+        const submitButton = document.getElementById('submit-button');
+        const hintButton = document.getElementById('hint-button');
+        const playAgainButton = document.getElementById('play-again-button');
+        const restartButtonFinal = document.getElementById('restart-button-final');
+        const llamaImage = document.getElementById('llama-image');
+        const llamaName = document.getElementById('llama-name');
+        const llamaDescription = document.getElementById('llama-description');
+        const riddleText = document.getElementById('riddle-text');
+        const answerInput = document.getElementById('answer-input');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const hintDisplayArea = document.getElementById('hint-display-area');
+        const backgroundOverlay = document.getElementById('background-overlay');
+        const topInfoArea = document.getElementById('top-info-area');
+        const llamaIndexContainer = document.getElementById('llama-index');
+        const llamaDotsContainer = document.getElementById('llama-dots');
+        const livesDisplay = document.getElementById('lives-display');
+        const livesCount = document.getElementById('lives-count');
+        const hintsDisplay = document.getElementById('hints-display');
+        const hintsCount = document.getElementById('hints-count');
+        const specialPuzzleArea = document.getElementById('special-puzzle-area');
+        const inputArea = document.querySelector('.input-area');
+
+        // --- Sound Synthesis (using Tone.js) ---
+        // (Unchanged from previous version)
+        let synth, membraneSynth, noiseSynth, gameOverSynth;
+        let correctSoundPlayer, incorrectSoundPlayer, beatPlayer, revealPlayer, gameOverPlayer;
+        let audioReady = false;
+        function setupAudioSynths() { /* ... */
+            try {
+                synth = new Tone.Synth().toDestination();
+                membraneSynth = new Tone.MembraneSynth().toDestination();
+                noiseSynth = new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0 } }).toDestination();
+                gameOverSynth = new Tone.AMSynth({ harmonicity: 1.5, envelope: { attack: 0.01, decay: 0.5, sustain: 0.1, release: 0.5 }, modulationEnvelope: { attack: 0.1, decay: 0.2, sustain: 0.1, release: 0.5 } }).toDestination();
+                correctSoundPlayer = () => { if (audioReady) synth.triggerAttackRelease("C5", "8n", Tone.now()); };
+                incorrectSoundPlayer = () => { if (audioReady) noiseSynth.triggerAttackRelease("8n", Tone.now()); };
+                beatPlayer = () => { if (audioReady) membraneSynth.triggerAttackRelease("C1", "8n", Tone.now()); };
+                revealPlayer = () => { if (!audioReady) return; const now = Tone.now(); synth.triggerAttackRelease("C4", "8n", now); synth.triggerAttackRelease("E4", "8n", now + 0.2); synth.triggerAttackRelease("G4", "8n", now + 0.4); synth.triggerAttackRelease("C5", "4n", now + 0.6); };
+                gameOverPlayer = () => { if (!audioReady) return; const now = Tone.now(); gameOverSynth.triggerAttackRelease("C4", "4n", now); gameOverSynth.triggerAttackRelease("A3", "4n", now + 0.3); gameOverSynth.triggerAttackRelease("F3", "2n", now + 0.6); };
+                audioReady = true; console.log("Audio synths setup complete.");
+            } catch (e) { console.error("Error setting up audio synths:", e); audioReady = false; }
+        }
+
+        // --- Game Data (Riddle Pools) ---
+        // Each llama now has a 'riddles' array. Each element is a riddle object.
+        // NOTE: Added 2-3 examples per pool. More can be added easily.
+        const llamas = [
+            { // 0: Sir Spit-a-Lot (Logic)
+                name: "Sir Spit-a-Lot", description: "The Regal Llama of Logic", emoji: "👑", backgroundClass: "bg-castle", riddleType: "text",
+                riddles: [
+                    { riddle: "What has to be broken before you can use it?", answer: "egg", hint: "It's often eaten for breakfast and comes in a shell." },
+                    { riddle: "A man is looking at a portrait. Someone asks him whose portrait he is looking at. He replies: 'Brothers and sisters I have none, but that man's father is my father's son.' Whose portrait is the man looking at?", answer: "his son", hint: "'My father's son' is the speaker himself (since he has no brothers)." },
+                    { riddle: "What has one head, one foot, and four legs?", answer: "bed", hint: "Think about furniture in a bedroom." }
+                ]
+            },
+            { // 1: Drama Llama (Wordplay)
+                name: "Drama Llama", description: "The Overly Theatrical", emoji: "🎭", backgroundClass: "bg-opera", riddleType: "text",
+                riddles: [
+                    { riddle: "I have keys, yet open no locks. I have space, yet have no room. You can enter, but can't go outside. What am I?", answer: "keyboard", hint: "You might be using one right now to type your answer." },
+                    { riddle: "What is always in front of you but can’t be seen?", answer: "future", hint: "Yesterday is behind you, today is here, but what about tomorrow?" },
+                    { riddle: "What word is spelled wrong in every dictionary?", answer: "wrong", hint: "The riddle is being very literal." }
+                ]
+            },
+            { // 2: Glow Llama (Pattern) - Pattern logic is dynamic, only hint varies
+                name: "Glow Llama", description: "Raver of the Night", emoji: "✨", backgroundClass: "bg-rave", riddleType: "pattern", shout: "IT’S LLAMA TIME!",
+                riddles: [
+                    { riddle: "Feel the rhythm! Watch the lights flash, then repeat the sequence by clicking them. Hit 'Start Pattern' to begin!", answer: null, hint: "Pay close attention to the order AND the colors of the lights." },
+                    { riddle: "Focus! Memorize the light sequence, then click the lights in the exact same order. Press 'Start Pattern'!", answer: null, hint: "Try saying the colors out loud as they flash." },
+                    { riddle: "It's Llama Time! Can you follow my lead? Watch the lights, repeat the pattern. Click 'Start Pattern'!", answer: null, hint: "Don't rush! Wait for the sequence to finish before you start clicking." }
+                ]
+            },
+            { // 3: No Probllama (Lateral Thinking)
+                name: "No Probllama", description: "The Chill Surfer Llama", emoji: "🏄", backgroundClass: "bg-beach", riddleType: "text",
+                riddles: [
+                    { riddle: "A man pushes his car along a road. When he reaches a hotel, he shouts, 'I'm bankrupt!' Why?", answer: "he was playing monopoly", hint: "Think outside the box... or maybe *on* the box. What kind of 'car' and 'hotel' might be involved?", answerCheck: (ua) => ua.toLowerCase().includes("monopoly") },
+                    { riddle: "A woman enters a restaurant, orders albatross soup, takes one sip, pulls out a gun, and ends her life. Why?", answer: "she was shipwrecked", hint: "The soup reminded her of something terrible. What might 'albatross soup' signify in a survival situation?", answerCheck: (ua) => ua.toLowerCase().includes("shipwreck") || ua.toLowerCase().includes("castaway") || ua.toLowerCase().includes("survival") },
+                    { riddle: "What can travel around the world while staying in a corner?", answer: "stamp", hint: "It helps letters get where they need to go." }
+                ]
+            },
+            { // 4: Logic Llama II (Formerly Code Llama)
+                name: "Logic Llama II", description: "The Analytical Artificer", emoji: "🧠", backgroundClass: "bg-logic", riddleType: "text", // Changed name, emoji, background
+                riddles: [
+                    { riddle: "If you have me, you want to share me. If you share me, you haven't kept me. What am I?", answer: "secret", hint: "It's something you might whisper." },
+                    { riddle: "There are three switches downstairs. Each corresponds to one of the three light bulbs in the attic. You can turn the switches on and off and leave them in any position. How can you identify which switch corresponds to which light bulb, if you are only allowed one trip upstairs?", answer: "turn one switch on leave it on turn second switch on for a minute then off go upstairs", hint: "Think about properties of light bulbs other than just being on or off.", answerCheck: (ua) => ua.toLowerCase().includes("on") && ua.toLowerCase().includes("off") && (ua.toLowerCase().includes("warm") || ua.toLowerCase().includes("hot")) },
+                    { riddle: "What is seen in the middle of March and April that can’t be seen at the beginning or end of either month?", answer: "r", hint: "Look *inside* the words themselves." }
+                ]
+            },
+            { // 5: Llamanade (Visual) - Pattern logic is dynamic, only hint varies
+                name: "Llamanade", description: "The Sweet But Sinister Vendor", emoji: "🍋", backgroundClass: "bg-stand", riddleType: "visual", quote: "Would you like a sip of destiny?",
+                riddles: [
+                    { riddle: "One of these ingredients is... off. Which numbered item breaks the pattern? (Type its number)", answer: "6", hint: "Look closely at each emoji. One seems to be feeling a bit... upside-down.", visualPattern: ['🍎', '🍊', '🍋', '🍎', '🍊', '🙃', '🍎', '🍊'] },
+                    { riddle: "Something's not right with my fruit stand! Which numbered item doesn't fit the sequence? (Type its number)", answer: "3", hint: "Most items alternate between two types. Which one breaks this alternation?", visualPattern: ['🍓', '🍇', '⭐', '🍓', '🍇', '🍓', '🍇', '🍓'] },
+                    { riddle: "Spot the odd one out in this arrangement! Which numbered item is the imposter? (Type its number)", answer: "7", hint: "Count the petals or points on each flower/star.", visualPattern: ['🌸', '🌻', '🌸', '🌻', '🌸', '🌻', '⭐', '🌻'] }
+                ]
+            },
+            { // 6: Grandma Llama (Combined/Tricky)
+                name: "Grandma Llama", description: "The Final Boss", emoji: "👵", backgroundClass: "bg-cottage", riddleType: "text", quote: "Child, you’ve come far...",
+                riddles: [
+                    { riddle: "I have cities, but no houses. Forests, but no trees. Water, but no fish. What am I?", answer: "map", hint: "It helps you find your way but isn't the place itself." },
+                    { riddle: "What question can you never answer yes to?", answer: "are you asleep yet", hint: "If you could answer 'yes', the answer would be false.", answerCheck: (ua) => ua.toLowerCase().includes("asleep") },
+                    { riddle: "What belongs to you, but other people use it more than you do?", answer: "your name", hint: "Think about how often you say it versus how often others say it." }
+                ]
+            }
+        ];
+
+        // --- Game State ---
+        const STARTING_LIVES = 3;
+        const STARTING_HINTS = 3;
+        let currentLlamaIndex = 0;
+        let solvedLlamas = []; // Will be filled by resetGame/startGame
+        let glowLlamaSequence = [];
+        let userPatternInput = [];
+        let livesRemaining = STARTING_LIVES;
+        let hintsRemaining = STARTING_HINTS;
+        let currentPlaythroughRiddles = []; // Holds the randomly selected riddle object for each llama index
+
+        // --- Functions ---
+
+        function updateLivesDisplay() { /* ... (Unchanged) ... */
+            livesCount.innerHTML = ''; for (let i = 0; i < STARTING_LIVES; i++) { const heart = document.createElement('span'); heart.textContent = i < livesRemaining ? '❤️' : '🖤'; heart.title = `${livesRemaining} lives remaining`; livesCount.appendChild(heart); } console.log(`Lives updated: ${livesRemaining}`);
+        }
+        function updateHintsDisplay() { /* ... (Unchanged) ... */
+            hintsCount.innerHTML = ''; for (let i = 0; i < STARTING_HINTS; i++) { const bulb = document.createElement('span'); bulb.textContent = i < hintsRemaining ? '💡' : '⚫'; bulb.title = `${hintsRemaining} hints remaining`; hintsCount.appendChild(bulb); } hintButton.disabled = hintsRemaining <= 0; console.log(`Hints updated: ${hintsRemaining}`);
+        }
+        function initializeLlamaIndex() { /* ... (Unchanged) ... */
+            llamaDotsContainer.innerHTML = ''; llamas.forEach((_, index) => { const dot = document.createElement('div'); dot.classList.add('llama-dot'); dot.id = `dot-${index}`; llamaDotsContainer.appendChild(dot); }); updateLlamaIndex();
+        }
+        function updateLlamaIndex() { /* ... (Unchanged) ... */
+            solvedLlamas.forEach((solved, index) => { const dot = document.getElementById(`dot-${index}`); if (dot) dot.classList.toggle('solved', solved); });
+        }
+
+        // Selects one random riddle for each llama for the current game
+        function selectPlaythroughRiddles() {
+            console.log("Selecting riddles for playthrough...");
+            currentPlaythroughRiddles = []; // Clear previous selection
+            llamas.forEach((llama, index) => {
+                const riddlePool = llama.riddles;
+                if (!riddlePool || riddlePool.length === 0) {
+                    console.error(`Llama ${index} (${llama.name}) has no riddles defined!`);
+                    // Handle error - maybe add a default fallback riddle?
+                    currentPlaythroughRiddles[index] = { riddle: "Oops! No riddle here.", answer: "error", hint: "Something went wrong." };
+                    return;
+                }
+                const randomIndex = Math.floor(Math.random() * riddlePool.length);
+                currentPlaythroughRiddles[index] = riddlePool[randomIndex];
+                console.log(` -> Llama ${index} (${llama.name}) gets riddle index ${randomIndex}: "${currentPlaythroughRiddles[index].riddle.substring(0, 30)}..."`);
+            });
+        }
+
+
+        function displayLlama(index) {
+            if (index >= llamas.length) { showFinalReveal(); return; }
+
+            const llamaStaticData = llamas[index]; // Get name, emoji, etc.
+            const currentRiddleData = currentPlaythroughRiddles[index]; // Get the selected riddle for this game
+
+            if (!currentRiddleData) {
+                console.error(`No riddle selected for llama index ${index}!`);
+                // Display an error or skip? For now, show error message.
+                riddleText.textContent = "Error: Could not load riddle.";
+                // Disable inputs
+                submitButton.disabled = true;
+                hintButton.disabled = true;
+                answerInput.disabled = true;
+                return;
+            }
+
+            currentLlamaIndex = index;
+
+            // Update visuals using static and selected data
+            llamaName.textContent = llamaStaticData.name;
+            llamaDescription.textContent = llamaStaticData.description;
+            llamaImage.textContent = llamaStaticData.emoji;
+            riddleText.textContent = currentRiddleData.riddle; // Use selected riddle text
+            backgroundOverlay.className = `background-overlay ${llamaStaticData.backgroundClass}`;
+
+            // Reset input and feedback
+            answerInput.value = '';
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = 'feedback-message';
+            hintDisplayArea.textContent = '';
+            specialPuzzleArea.innerHTML = '';
+            answerInput.style.display = 'block';
+            inputArea.style.display = 'flex';
+            submitButton.textContent = 'Submit';
+            submitButton.disabled = false;
+            answerInput.disabled = false;
+            // Enable hint button only if hints remain AND riddle isn't already solved (check needed?)
+            hintButton.disabled = hintsRemaining <= 0 || solvedLlamas[index];
+
+            // Handle specific riddle types (using static type from llamaStaticData)
+            if (llamaStaticData.riddleType === 'pattern') {
+                answerInput.style.display = 'none';
+                inputArea.style.display = 'flex';
+                submitButton.textContent = 'Start Pattern';
+                // Pass the selected riddle data in case pattern setup needs specific info later
+                setupPatternPuzzle(llamaStaticData, currentRiddleData);
+            } else if (llamaStaticData.riddleType === 'visual') {
+                // Pass the selected riddle data to use its visualPattern
+                setupVisualPuzzle(llamaStaticData, currentRiddleData);
+            }
+
+            if (llamaStaticData.quote) console.log(`Llama says: ${llamaStaticData.quote}`);
+            if (llamaStaticData.shout) { console.log(`Llama shouts: ${llamaStaticData.shout}`); if (beatPlayer) setTimeout(beatPlayer, 300); }
+
+            gameArea.style.display = 'flex';
+            topInfoArea.style.display = 'flex';
+        }
+
+        // --- Pattern Puzzle Logic (Accepts selected riddle data) ---
+        function setupPatternPuzzle(llamaStaticData, currentRiddleData) {
+            specialPuzzleArea.innerHTML = ''; const patternContainer = document.createElement('div');
+            patternContainer.className = 'pattern-container'; const colors = ['#ff4444', '#4444ff', '#44ff44', '#ffff44'];
+            const numLights = colors.length; const sequenceLength = 3 + Math.floor(currentLlamaIndex / 2);
+            glowLlamaSequence = []; for (let i = 0; i < sequenceLength; i++) glowLlamaSequence.push(Math.floor(Math.random() * numLights));
+            console.log("Glow Llama Sequence (Indices):", glowLlamaSequence);
+            for (let i = 0; i < numLights; i++) { const light = document.createElement('div'); light.className = 'pattern-light'; light.dataset.index = i; light.style.backgroundColor = '#555'; patternContainer.appendChild(light); }
+            specialPuzzleArea.appendChild(patternContainer); userPatternInput = [];
+        }
+        // playPatternSequence, handlePatternClick, checkPatternAnswer, disable/enablePatternInput remain unchanged internally
+        function playPatternSequence() { /* ... (Unchanged) ... */
+            disablePatternInput(); submitButton.disabled = true; feedbackMessage.textContent = "Watch carefully..."; feedbackMessage.className = 'feedback-message';
+            let delay = 500; const lights = specialPuzzleArea.querySelectorAll('.pattern-light'); console.log(`Starting sequence playback. Found ${lights.length} lights.`);
+            glowLlamaSequence.forEach((index, seqIndex) => {
+                setTimeout(() => { const light = lights[index]; if (light) { console.log(`Seq ${seqIndex}: Lighting up light index ${index}`); light.classList.add('lit'); if (synth) synth.triggerAttackRelease(`C${4 + index}`, "16n", Tone.now()); } else { console.error(`Seq ${seqIndex}: Could not find light element with index ${index}`); } }, delay);
+                delay += 500;
+                setTimeout(() => { const light = lights[index]; if (light) { light.classList.remove('lit'); console.log(`Seq ${seqIndex}: Turning off light index ${index}`); } }, delay);
+                delay += 300;
+            });
+            setTimeout(() => { console.log("Sequence finished. Enabling input."); feedbackMessage.textContent = "Your turn! Click the lights."; enablePatternInput(); submitButton.disabled = false; submitButton.textContent = 'Check Pattern'; }, delay + 100);
+        }
+        function handlePatternClick(event) { /* ... (Unchanged) ... */
+            const clickedIndex = parseInt(event.target.dataset.index); userPatternInput.push(clickedIndex);
+            event.target.classList.add('user-active'); if (synth) synth.triggerAttackRelease(`E${4 + clickedIndex}`, "16n", Tone.now());
+            setTimeout(() => event.target.classList.remove('user-active'), 200); console.log("User pattern input:", userPatternInput);
+        }
+        function checkPatternAnswer() { /* ... (Unchanged) ... */
+            console.log("Checking pattern:", userPatternInput, "against", glowLlamaSequence);
+            let correct = userPatternInput.length === glowLlamaSequence.length;
+            if (correct) { for (let i = 0; i < glowLlamaSequence.length; i++) { if (userPatternInput[i] !== glowLlamaSequence[i]) { correct = false; break; } } }
+            if (correct) { correctFeedback("Correct pattern!"); userPatternInput = []; disablePatternInput(); advanceToNextLlama(); }
+            else { userPatternInput = []; incorrectFeedback("Incorrect pattern! Try again."); if (livesRemaining > 0) { setTimeout(() => { submitButton.textContent = 'Start Pattern'; feedbackMessage.textContent = "Watch again..."; disablePatternInput(); }, 1500); } }
+        }
+        function disablePatternInput() { /* ... (Unchanged) ... */
+            const lights = specialPuzzleArea.querySelectorAll('.pattern-light'); lights.forEach(light => { light.classList.remove('input-enabled'); light.removeEventListener('click', handlePatternClick); }); console.log("Pattern input disabled.");
+        }
+        function enablePatternInput() { /* ... (Unchanged) ... */
+            const lights = specialPuzzleArea.querySelectorAll('.pattern-light'); lights.forEach(light => { light.classList.add('input-enabled'); light.addEventListener('click', handlePatternClick); }); console.log("Pattern input enabled.");
+        }
+
+
+        // --- Visual Puzzle Logic (Accepts selected riddle data) ---
+        function setupVisualPuzzle(llamaStaticData, currentRiddleData) {
+            specialPuzzleArea.innerHTML = '';
+            const visualContainer = document.createElement('div');
+            visualContainer.className = 'visual-puzzle-container';
+
+            // Use the visualPattern from the *selected* riddle
+            const pattern = currentRiddleData.visualPattern || ['?']; // Fallback if pattern missing
+            visualContainer.style.gridTemplateColumns = `repeat(${Math.min(pattern.length, 8)}, 1fr)`;
+
+            pattern.forEach((item, index) => {
+                const visualItem = document.createElement('div');
+                visualItem.className = 'visual-item';
+                visualItem.textContent = item;
+                visualItem.title = `Item ${index + 1}`;
+                visualContainer.appendChild(visualItem);
+            });
+            specialPuzzleArea.appendChild(visualContainer);
+        }
+
+        // --- Hint Logic (Uses selected riddle data) ---
+        function useHint() {
+            if (hintsRemaining <= 0 || solvedLlamas[currentLlamaIndex]) return; // Also check if solved
+
+            hintsRemaining--;
+            updateHintsDisplay();
+
+            const currentRiddleData = currentPlaythroughRiddles[currentLlamaIndex]; // Get selected riddle
+            hintDisplayArea.textContent = `Hint: ${currentRiddleData.hint}`;
+
+            if (hintsRemaining <= 0) hintButton.disabled = true;
+            console.log(`Hint used for Llama ${currentLlamaIndex}. Hints remaining: ${hintsRemaining}`);
+        }
+
+        // --- General Answer Checking (Uses selected riddle data) ---
+        function checkAnswer() {
+            const userAnswer = answerInput.value.trim().toLowerCase();
+            const llamaStaticData = llamas[currentLlamaIndex]; // For type check
+            const currentRiddleData = currentPlaythroughRiddles[currentLlamaIndex]; // For answer/check
+
+            if (submitButton.disabled || !currentRiddleData) return;
+
+            // Handle pattern puzzle separately
+            if (llamaStaticData.riddleType === 'pattern') {
+                if (submitButton.textContent === 'Check Pattern') checkPatternAnswer();
+                else console.warn("Submit clicked for pattern llama, but not in 'Check Pattern' state.");
+                return;
+            }
+
+            // Check for empty answer for text/visual types
+            if (!userAnswer && (llamaStaticData.riddleType === 'text' || llamaStaticData.riddleType === 'visual')) {
+                feedbackMessage.textContent = "Please enter an answer."; feedbackMessage.className = 'feedback-message feedback-incorrect'; return;
+            }
+
+            let isCorrect = false;
+            // Use custom check from selected riddle if available
+            if (typeof currentRiddleData.answerCheck === 'function') {
+                isCorrect = currentRiddleData.answerCheck(userAnswer);
+            } else { // Otherwise simple string comparison with selected riddle's answer
+                const expectedAnswer = currentRiddleData.answer.toLowerCase();
+                isCorrect = userAnswer === expectedAnswer;
+            }
+
+            if (isCorrect) { correctFeedback(`Correct! Well done.`); advanceToNextLlama(); }
+            else { incorrectFeedback("That's not quite right. Try again!"); }
+        }
+
+        function correctFeedback(message) { /* ... (Unchanged, but hintButton disable logic moved to displayLlama) ... */
+            feedbackMessage.textContent = message; feedbackMessage.className = 'feedback-message feedback-correct';
+            if (correctSoundPlayer) correctSoundPlayer();
+            solvedLlamas[currentLlamaIndex] = true; // Mark as solved for this playthrough
+            updateLlamaIndex();
+            hintButton.disabled = true; // Disable hint button once riddle is solved
+            hintDisplayArea.textContent = '';
+        }
+        function incorrectFeedback(message) { /* ... (Unchanged) ... */
+            feedbackMessage.textContent = message; feedbackMessage.className = 'feedback-message feedback-incorrect';
+            if (incorrectSoundPlayer) incorrectSoundPlayer();
+            livesRemaining--; updateLivesDisplay(); console.log(`Incorrect answer. Lives remaining: ${livesRemaining}`);
+            gameArea.classList.add('animate-shake'); setTimeout(() => gameArea.classList.remove('animate-shake'), 500);
+            if (livesRemaining <= 0) { console.log("Game Over triggered."); showGameOver(); }
+        }
+        function advanceToNextLlama() { /* ... (Unchanged) ... */
+            submitButton.disabled = true; answerInput.disabled = true; hintButton.disabled = true;
+            if (llamas[currentLlamaIndex].riddleType === 'pattern') disablePatternInput(); // Use static type
+            setTimeout(() => { currentLlamaIndex++; if (currentLlamaIndex < llamas.length) { displayLlama(currentLlamaIndex); } else { showFinalReveal(); } }, 1500);
+        }
+
+        // --- Game Over and Reset ---
+        function showGameOver() { /* ... (Unchanged) ... */
+            if (gameOverPlayer) gameOverPlayer(); gameArea.style.display = 'none'; finalScreen.style.display = 'none';
+            topInfoArea.style.display = 'none'; gameOverScreen.style.display = 'flex';
+        }
+
+        function resetGame() {
+            console.log("Resetting game state...");
+            livesRemaining = STARTING_LIVES; hintsRemaining = STARTING_HINTS; currentLlamaIndex = 0;
+            solvedLlamas = Array(llamas.length).fill(false); // Reset solved status
+            userPatternInput = []; glowLlamaSequence = [];
+
+            // *** Select new riddles for this playthrough ***
+            selectPlaythroughRiddles();
+
+            gameArea.style.display = 'none'; finalScreen.style.display = 'none'; gameOverScreen.style.display = 'none';
+            topInfoArea.style.display = 'none'; introScreen.style.display = 'flex';
+        }
+
+        function showFinalReveal() { /* ... (Unchanged) ... */
+            gameArea.style.display = 'none'; topInfoArea.style.display = 'none'; finalScreen.style.display = 'flex';
+            backgroundOverlay.className = 'background-overlay'; if (revealPlayer) revealPlayer();
+        }
+
+        async function startGame() {
+            try { if (Tone.context.state !== 'running') { await Tone.start(); console.log('AudioContext started successfully!'); } setupAudioSynths(); }
+            catch (e) { console.error("AudioContext could not be started.", e); audioReady = false; }
+            finally {
+                // Reset state variables
+                livesRemaining = STARTING_LIVES; hintsRemaining = STARTING_HINTS; currentLlamaIndex = 0;
+                solvedLlamas = Array(llamas.length).fill(false); // Reset solved status
+                userPatternInput = []; glowLlamaSequence = [];
+
+                // *** Select riddles for this playthrough ***
+                selectPlaythroughRiddles();
+
+                introScreen.style.display = 'none'; finalScreen.style.display = 'none'; gameOverScreen.style.display = 'none';
+
+                updateLivesDisplay(); updateHintsDisplay(); initializeLlamaIndex();
+
+                topInfoArea.style.display = 'flex'; displayLlama(0);
+            }
+        }
+
+        // --- Event Listeners ---
+        // (Unchanged from previous version)
+        beginButton.addEventListener('click', startGame);
+        hintButton.addEventListener('click', useHint);
+        playAgainButton.addEventListener('click', resetGame);
+        restartButtonFinal.addEventListener('click', resetGame);
+        submitButton.addEventListener('click', () => {
+            const llamaStaticData = llamas[currentLlamaIndex]; // Use static data for type check
+            if (llamaStaticData.riddleType === 'pattern') { if (submitButton.textContent === 'Start Pattern') playPatternSequence(); else if (submitButton.textContent === 'Check Pattern') checkPatternAnswer(); }
+            else { checkAnswer(); }
+        });
+        answerInput.addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') { event.preventDefault(); const llamaStaticData = llamas[currentLlamaIndex]; if (llamaStaticData.riddleType !== 'pattern') submitButton.click(); }
+        });
+
+    </script>
+</body>
+
+</html>
