@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freshman Year Jeopardy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Oswald:wght@700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #002E5D;
+            /* BYU Navy */
+            color: #FFFFFF;
+            /* White text default */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        /* Apply Oswald font to specific elements */
+        h1,
+        h2,
+        h3,
+        .category-header,
+        .jeopardy-cell,
+        #quote-screen-category {
+            font-family: 'Oswald', sans-serif;
+        }
+
+        /* Screen Containers - manage visibility */
+        .screen {
+            width: 100%;
+            max-width: 1000px;
+            /* Max width for the game area */
+            display: none;
+            /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .screen.active {
+            display: flex;
+            /* Show active screen */
+        }
+
+        /* Color Definitions */
+        .bg-byu-navy {
+            background-color: #002E5D;
+        }
+
+        .text-byu-navy {
+            color: #002E5D !important;
+        }
+
+        /* FORCE NAVY TEXT */
+        .border-byu-navy {
+            border-color: #002E5D;
+        }
+
+        .bg-white {
+            background-color: #FFFFFF;
+        }
+
+        .text-white {
+            color: #FFFFFF;
+        }
+
+        .bg-gray-100 {
+            background-color: #F7FAFC;
+        }
+
+        /* Light gray for input bg */
+        .bg-gray-200 {
+            background-color: #E2E8F0;
+        }
+
+        .bg-gray-700 {
+            background-color: #4A5568 !important;
+        }
+
+        /* Force dark gray bg for disabled */
+        .text-gray-400 {
+            color: #A0AEC0 !important;
+        }
+
+        /* Ensure disabled text color overrides */
+        .text-gray-500 {
+            color: #6B7280;
+        }
+
+        /* Darker gray for placeholder */
+        .text-gray-700 {
+            color: #4A5568;
+        }
+
+        .border-gray-300 {
+            border-color: #D1D5DB;
+        }
+
+        .border-gray-500 {
+            border-color: #6B7280;
+        }
+
+        .border-white {
+            border-color: #FFFFFF;
+        }
+
+        .text-black {
+            color: #000000;
+        }
+
+        /* Black Text */
+        .text-red-600 {
+            color: #E53E3E;
+        }
+
+        .text-green-600 {
+            color: #38A169;
+        }
+
+        .bg-yellow-300 {
+            background-color: #FCD34D;
+        }
+
+        /* Yellow for highlight bg */
+        .text-amber-700 {
+            color: #B45309;
+        }
+
+        /* Gold/Amber text for highlight */
+
+
+        /* Jeopardy Board Container */
+        #jeopardy-board-container {
+            background-color: #FFFFFF;
+            /* White background for the grid container */
+            padding: 1rem;
+            /* Padding around the grid */
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        /* Jeopardy Board Grid */
+        #jeopardy-board {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            /* 6 columns */
+            gap: 0.75rem;
+            /* Gap between cells */
+            width: 100%;
+        }
+
+        /* Category Header Styling */
+        .category-header {
+            /* Navy text (!important), centered, bold, uppercase. No background specified. */
+            @apply text-byu-navy text-center py-3 px-2 rounded-lg font-bold uppercase text-sm md:text-base lg:text-lg shadow-sm border-2 border-byu-navy;
+            height: 100%;
+            display: flex;
+            /* Enables flex alignment */
+            align-items: center;
+            /* Vertical centering */
+            justify-content: center;
+            /* Horizontal centering */
+            color: #002E5D !important;
+            /* Force Navy Text */
+        }
+
+        /* Jeopardy Cell Styling */
+        .jeopardy-cell {
+            /* Navy text (!important), large, bold, centered. Square aspect ratio. Navy border. No background specified. */
+            @apply text-byu-navy text-4xl font-bold flex items-center justify-center text-center aspect-square rounded-lg shadow-md cursor-pointer transition-all duration-200 ease-in-out border-2 border-byu-navy hover:bg-gray-100 hover:shadow-lg active:scale-95;
+            color: #002E5D !important;
+            /* Force Navy Text */
+        }
+
+        .jeopardy-cell.answered {
+            /* Gray background and text, non-interactive */
+            @apply bg-gray-200 text-gray-400 cursor-not-allowed opacity-70 hover:bg-gray-200 border-gray-300 shadow-inner;
+            pointer-events: none;
+            color: #A0AEC0 !important;
+            /* Override navy for answered cells */
+        }
+
+
+        /* Player Score Styles */
+        #player-scores-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: #002E5D;
+            /* Navy background */
+            border-radius: 0.5rem;
+            border-top: 2px solid white;
+            width: 100%;
+            margin-top: 1.5rem;
+            /* Increased margin */
+        }
+
+        .player-score-item {
+            /* Default: White text, horizontal layout */
+            @apply text-white text-lg px-3 py-1 rounded bg-blue-800 shadow transition-all duration-200;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .player-score-item.disabled {
+            /* Updated disabled style with !important */
+            @apply text-gray-400 bg-gray-700 line-through opacity-60;
+            color: #A0AEC0 !important;
+            background-color: #4A5568 !important;
+        }
+
+        .player-score-item.current-turn {
+            /* Highlight style for current player - Yellow background, GOLD text */
+            @apply bg-yellow-300 text-amber-700 font-bold scale-105;
+            color: #B45309 !important;
+            /* Force Gold/Amber Text */
+        }
+
+        /* Quote Screen Styles */
+        #quote-screen {
+            /* White background, default text color set to black */
+            @apply bg-white text-black p-6 md:p-8 rounded-lg shadow-xl w-full;
+        }
+
+        #quote-screen-category {
+            @apply text-2xl md:text-3xl font-bold text-byu-navy mb-4 text-center uppercase;
+        }
+
+        #quote-screen-text {
+            /* Ensure black text, align left for multi-line */
+            @apply text-xl md:text-2xl font-semibold mb-6 text-black text-left;
+            font-family: 'Inter', sans-serif;
+            min-height: 100px;
+            line-height: 1.6;
+            /* Improve readability for multi-line */
+        }
+
+        /* Style for the "Who said this?" label */
+        #quote-screen-input-area label {
+            /* Bold, larger, black text */
+            @apply block text-xl font-bold text-black mb-2 text-left;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #quote-screen-input {
+            /* Explicit black text, visible placeholder */
+            @apply w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black mt-1 mb-4 bg-gray-100 text-lg placeholder:text-gray-500;
+            font-family: 'Inter', sans-serif;
+            color: #000000 !important;
+            /* Force black text color */
+        }
+
+        #quote-screen-feedback {
+            /* Black text by default, overridden by specific classes */
+            @apply mt-2 mb-4 text-lg font-semibold text-center text-black;
+            min-height: 1.5em;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Green/Red override black for feedback */
+        #quote-screen-feedback.feedback-correct {
+            @apply text-green-600;
+        }
+
+        #quote-screen-feedback.feedback-incorrect {
+            @apply text-red-600;
+        }
+
+        #quote-screen-button-container {
+            @apply flex justify-end mt-6;
+            /* Align button container to right */
+        }
+
+        #submit-quote-btn {
+            /* White background, navy text, navy border, more padding */
+            @apply bg-white text-byu-navy px-8 py-3 rounded-lg font-semibold shadow-md border-2 border-byu-navy hover:bg-gray-100 active:scale-95 transition-colors duration-150;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Player Setup & Winner Screen Styles */
+        #player-setup-screen {
+            /* Removed winner-screen from this rule */
+            @apply bg-white p-8 rounded-lg shadow-lg text-center text-byu-navy w-full max-w-md;
+        }
+
+        /* Specific styles for winner screen */
+        #winner-screen-content {
+            @apply bg-white p-8 rounded-lg shadow-lg text-center text-byu-navy w-full max-w-3xl;
+            /* Wider max-width */
+        }
+
+        #winner-message {
+            @apply text-2xl font-semibold mt-8 mb-8 text-black;
+            /* Black text for message */
+            font-family: 'Inter', sans-serif;
+        }
+
+        .player-name-input {
+            /* Ensure black text */
+            @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black mb-3;
+        }
+
+        .link-home{
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <a class="link-home" href="index.html">HOME PAGE</a>
+    <header class="mb-6 text-center">
+        <h1 class="text-3xl md:text-4xl font-bold text-white">Freshman Year Jeopardy</h1>
+    </header>
+
+    <div id="player-setup-screen" class="screen active">
+        <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg text-center text-byu-navy">
+            <h2 class="text-2xl font-bold mb-6">Enter Player Names (Max 8)</h2>
+            <div id="player-inputs" class="space-y-3 mb-6">
+                <input type="text" class="player-name-input" placeholder="Player 1 Name">
+            </div>
+            <button id="add-player-btn"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg mr-2 hover:bg-blue-700 transition duration-150 ease-in-out">Add
+                Player</button>
+            <button id="start-game-btn"
+                class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition duration-150 ease-in-out">Start
+                Game</button>
+        </div>
+    </div>
+
+    <div id="jeopardy-board-screen" class="screen">
+        <div id="jeopardy-board-container">
+            <div id="jeopardy-board">
+            </div>
+        </div>
+        <div id="player-scores-container">
+        </div>
+    </div>
+
+    <div id="quote-screen" class="screen">
+        <h2 id="quote-screen-category" class="text-byu-navy">Category Title</h2>
+        <p id="quote-screen-text" class="text-left">Quote text goes here...</p>
+        <div id="quote-screen-input-area" class="w-full max-w-lg">
+            <label for="quote-screen-input">Who said this?</label>
+            <input type="text" id="quote-screen-input" placeholder="Type the speaker's name...">
+        </div>
+        <div id="quote-screen-feedback"></div>
+        <div id="quote-screen-button-container" class="w-full max-w-lg">
+            <button id="submit-quote-btn">Submit Answer</button>
+        </div>
+    </div>
+
+    <div id="winner-screen" class="screen">
+        <div id="winner-screen-content">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6 text-byu-navy">Game Over!</h2>
+            <p id="winner-message"></p>
+            <button id="play-again-btn"
+                class="mt-10 bg-blue-600 text-white px-6 py-3 rounded-lg text-lg hover:bg-blue-700 transition duration-150 ease-in-out">Play
+                Again</button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- DATA: Quotes (Updated Categories & Punctuation Added) ---
+        const allQuotes = [
+            // Assign quotes to new categories
+            { speaker: 'Kyrah', quote: 'Pam and I slept together last night.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Anna/Pam', quote: 'Anna: Is love an open door? Pam: Nah it’s more of a half open door. You gotta shove your way in.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam', quote: 'Do you ever get the nervous poops?', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Pam', quote: 'I call it the hoe cause everyone touches it and no one wants it.', semester: 'Fall', category: 'Food Fixations' },
+            { speaker: 'Anna/Pam', quote: 'Anna: This duck squeaks if you squeeze it hard enough. Pam: Well yeah so do children.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Livie', quote: 'He went for my toes and my spoon!', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam', quote: 'I’m such a good housewife.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Livie', quote: 'I want this bread to have my babies.', semester: 'Fall', category: 'Food Fixations' },
+            { speaker: 'Anna/Kyrah/Pam', quote: 'Anna: If I jumped off the top of the Kimball tower would you guys jump with me? Kyrah and Pam: *no hesitation* Yes.', semester: 'Fall', category: 'Only at BYU' },
+            { speaker: 'Livie', quote: 'Yes I am a freshman, no I am not your wife.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kyrah', quote: 'I’m already beating you, I slept in her bed all night.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Cole', quote: 'Do you feel fulfilled? That I want to kill myself now.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Anna/Pam', quote: 'Anna: Freshman 15 feet off the ground. Pam: Freshman 15 feet from the edge. Anna: Freshman 15 stories away.', semester: 'Fall', category: 'Only at BYU' },
+            { speaker: 'Livie', quote: 'They’re single celled organisms with no emotional intelligence.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam', quote: 'I don’t have answers, I only have problems and questions.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Livie', quote: 'The bar is in hell.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Livie', quote: 'I can’t wait until yall start kissing guys cause there’s so much I can teach you.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kyrah', quote: 'You guys make me excited to kiss a man.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Livie', quote: 'If I’ve gotta have my world rocked by God’s plan, you’ve gotta have your world rocked by Gods plan.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Pam/Livie', quote: 'Pam: I need help. Livie: You need adderall.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Elisabeth', quote: 'If you’re boring, get out.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Anna', quote: 'I think I found my final resting place.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Kaylin', quote: 'Do you ever eat raw hot dogs?', semester: 'Fall', category: 'Food Fixations' },
+            { speaker: 'Anna', quote: 'Kyrah I worry about you once an hour.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Elisabeth', quote: 'You can’t die in childhood, that’s embarrassing.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'Pam you are natural selection at its finest.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Anna', quote: 'Guys I miss christmas. It’s not like it’s gone or anything, I just miss it.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Kyrah', quote: 'Those boys need to be whacked upside the head with a brick.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Anna', quote: 'If I told my parents I was going to be a prostitute they’d be like okay.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'I know he has anger issues but so do I.', semester: 'Fall', category: 'Only at BYU' }, // Relates to Captain Moroni context
+            { speaker: 'Livie', quote: 'Casmin, aladdin’s daddy? He can be my daddy too.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam', quote: 'It’s gonna be our cute little auschwitz.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Pam/Kaylin', quote: 'Pam: I baptized the car with my mom in it, but she was asleep. Kaylin: Did you drive it into a pond?', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Kyrah', quote: 'I’ll only do my chores if a hot man comes home to smash me.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Tryzden', quote: 'No, there’s a lot of black people there.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Pam', quote: 'If we’re not supposed to eat at night, why is there a light in the fridge?', semester: 'Fall', category: 'Food Fixations' }, // Moved from Late Night
+            { speaker: 'Elisabeth', quote: 'I have funeral potatoes and there from an actual funeral, so they’re legit.', semester: 'Fall', category: 'Food Fixations' },
+            { speaker: 'Anna', quote: 'Are you microwaving? Cause you’re really hot.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth', quote: 'I’m gonna major in neuroscience because I don’t have a brain.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Kyrah\'s Mom', quote: 'Kyrah your dad smashed me.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Kyrah', quote: 'Guys my parents go crazy.', semester: 'Fall', category: 'Roommate Realities' },
+            // October
+            { speaker: 'Livie', quote: 'I’m a really big enjoyer of the XY chromosome.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth', quote: 'Just put drugs in his pocket, and then report him!', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'This makes me happy in ways that people can’t.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Anna', quote: 'Children yearn for the mines. And as a child I can say that.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'My deodorant is gluten free. That means I can eat it.', semester: 'Fall', category: 'Food Fixations' },
+            { speaker: 'Pam', quote: 'Make sure you say your prayers before you go into the testing center. There isn’t any reception in there, you aren’t gonna get an answer.', semester: 'Fall', category: 'Only at BYU' },
+            { speaker: 'Anna/Pam', quote: 'Anna: When are we building? Pam: Lives together.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Anna', quote: 'Are you Pam’s salmon? Cause you’re smoking.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth/Pam', quote: 'Elisabeth: I would love some cheesy bread because that would make me feel so much better about africa. Pam: Why? Because you got food and they don’t.', semester: 'Fall', category: 'Food Fixations' },
+            { speaker: 'Anna', quote: 'I hope you get food poisoning just to learn.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Anna', quote: 'I’m feeling emotions that only boybands from the 90s can dissect.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Pam\'s Mom', quote: 'If I were a guy I’d marry you.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kyrah', quote: 'Be careful cause I grabbed her toenails before.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'I would shut Ryan Reynolds up with a kiss.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Anna', quote: 'I’d let Ammon cut off my arm.', semester: 'Fall', category: 'Only at BYU' },
+            { speaker: 'Kyrah', quote: 'Too bad, you’re stuck with me for eternity.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Kyrah', quote: 'How young is your brother willing to date?', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Livie', quote: 'If I wanted to I could be poppin kids out by now!', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Anna', quote: 'Not clickbait: Kyrah loves Anna.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Anna', quote: 'Not clickbait: Kyrah hates Elisabeth.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Anna', quote: 'Not clickbait: Kyrah slept in Pam’s bed.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Anna', quote: 'Not clickbait: Kyrah’s getting around.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Anna', quote: 'Todd is basically my church boss.', semester: 'Fall', category: 'Only at BYU' },
+            { speaker: 'Livie', quote: 'It felt weird answering his call with my pants off.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Livie', quote: 'I like studying with a view, sue a girl.', semester: 'Fall', category: 'Only at BYU' },
+            { speaker: 'Anna/Elisabeth', quote: 'Anna: This looks terrible, none of the lines are straight. Elisabeth: It’s artistic! Anna: It’s autistic, cause I made it.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'I wouldn’t be a very convincing alien.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Elisabeth', quote: 'Pet Lemuel.', semester: 'Fall', category: 'Only at BYU' },
+            { speaker: 'Livie', quote: 'When you get cancer they really like to take that blood.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Kaylin', quote: 'I know that my future husband will kill me… it’s just for the insurance money.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam/Anna', quote: 'Pam: I don’t wanna screw myself. Anna: No, but you’ll be screwing one of them.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kaylin', quote: 'Your stomach is like a portable cup.', semester: 'Fall', category: 'Food Fixations' },
+            { speaker: 'Caleb', quote: 'If I had a dress it would be bright blue and very short.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Bishop Pendleton', quote: 'I’ve seen his legs.', semester: 'Fall', category: 'Only at BYU' },
+            { speaker: 'Pam', quote: 'I have the soup of sadness.', semester: 'Fall', category: 'Food Fixations' },
+            { speaker: 'Kaylin', quote: 'I’m okay if you guys swear, I’m fine with it.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Elisabeth/Anna', quote: 'Elisabeth: I admire tall people for being something I’ll never be. Anna: Happy?', semester: 'Fall', category: 'Roommate Realities' },
+            // November
+            { speaker: 'Pam', quote: 'Just be like Helen Keller: blind, deaf, and dumb, cause then you can’t complain!', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Pam', quote: 'I came here and I was like, woah, where’s all the black people?', semester: 'Fall', category: 'Only at BYU' }, // BYU context
+            { speaker: 'Livie', quote: 'Do you know how fun kissing in this would be?', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth', quote: 'Everybody in the state of vegas.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Pam', quote: 'If you do a really mean stanky leg you could tear your acl.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Kaylin', quote: 'I’m excited for the time of year where I don’t have to see your faces.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Elisabeth', quote: 'Whenever Anna talks about killing people its usually not in a game.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Elisabeth', quote: 'I’m just waiting for God to drop him in my lap, oh wait- i’m waiting for God to drop me in his lap.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam', quote: 'Do mascots count as furrys?', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Elisabeth', quote: 'Obviously, you can\'t wear lingerie without angel wings!', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam', quote: 'I need a paper towel and a therapist.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Austin', quote: 'Were her and Todd kissing? Cause Todd’s sick too!', semester: 'Fall', category: 'Only at BYU' }, // Todd context
+            { speaker: 'Kyrah/Anna', quote: 'Kyrah: Feel free to use kissing as a way to shut me up anytime. Anna: Actually I’ll just stick my sock in your mouth.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth', quote: 'Kyrah needs someone to do something for her and it’s not gonna be me!', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Kyrah', quote: 'Anna is as hoeless as it can get.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kaylin', quote: 'I like this cause I can see the little cat drowning.', semester: 'Fall', category: 'Just Plain Weird' },
+            // December
+            { speaker: 'Elisabeth', quote: 'All I want for christmas is drugs.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'Uh, I think it’s boiled.', semester: 'Fall', category: 'Food Fixations' },
+            { speaker: 'Pam', quote: 'Oh right, you guys are Amish.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Livie', quote: 'My tongues been in worse places.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Elisabeth', quote: 'Super scandalous: like Twilight!', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Pam', quote: 'If they wanna be a deer, then we should have hunting season.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Kyrah', quote: 'Perfect, I can start having babies immediately.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth/Anna/Kyrah', quote: 'Elisabeth: Is she an eight cow wife? Anna: No, she’s a seven goat wife. Kyrah: Is that more or less? Elisabeth and Anna: Lots less. Anna and Kyrah: *throws punches*', semester: 'Fall', category: 'Only at BYU' }, // Cultural reference
+            { speaker: 'Elisabeth/Kyrah', quote: 'Elisabeth: Those dresses are kinda short. Kyrah: Yeah, we wanna show off our butts.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kyrah', quote: 'Imagine this guy didn’t brush his tongue and shoved it down her throat.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth', quote: 'No one will ever marry me, said Elly with a snort. Cause I’m bad at volleyball, and very. very. short.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth', quote: 'No one will ever marry me, said Elisabeth. Because I spit my toothpaste like a donkey.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam', quote: 'I don’t know what I am… I think I’m a turnip.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Elisabeth/Pam', quote: 'Elisabeth: We’re gonna do a really quick we listen and we don’t judge. I lit the microwave on fire once. Pam: THIS ONE?', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Livie', quote: 'Take these three little pink pills, they’ll do wonders.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Pam', quote: 'I’ve just found the earths butthole.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'So you’re like toilet paper.', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Kyrah', quote: 'She’s nineteen and pregnant? That sounds like something I wanna do!', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Izzy', quote: 'Study for what? Anatomy.', semester: 'Fall', category: 'Only at BYU' }, // Class context
+            { speaker: 'Izzy', quote: 'Tell me why that was not like the movies.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Kaylin', quote: 'My roommate ate my homework.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Livie/Kyrah', quote: 'Livie: I’m screwed. Kyrah: Well I didn’t screw you.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth', quote: 'Pam always hits me.', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Elisabeth', quote: 'I am drooling like my sister!', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Pam', quote: 'I picked it because it’s broken… like me.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Kyrah/Pam', quote: 'Kyrah: Are you crying? Pam: No! *a tear falls down her face*', semester: 'Fall', category: 'Roommate Realities' },
+            { speaker: 'Kyrah/Elisabeth', quote: '*to the tune of O Christmas tree* Kyrah: Oh sexy beast, oh sexy beast. Elisabeth: Where is the man who owns you?', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kyrah/Pam', quote: 'Kyrah: He needs better pecs he’s flat. Pam: Do you want your man to have boobs? Like what do you mean?', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam', quote: 'I like being high. It’s fun!', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Elisabeth', quote: 'No one will ever marry me. Said Elisabeth with a squawk. Cause my phone is always missing And I don’t know how to talk (To boys).', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam/Kyrah', quote: 'Kyrah: *finds a disturbing reel of Santa and a bunch of shirtless men* Pam: Oh my, Santa BABY!! Kyrah: I want to have Santa’s babies!! Pam: Wow no wonder I saw Mommy kissin’ Santa Claus!', semester: 'Fall', category: 'Just Plain Weird' },
+            { speaker: 'Kyrah', quote: 'We need to go on our honeymoons together so we can screw our husbands.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kyrah', quote: 'Holy crap he just ATE her MOUTH!!', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kyrah', quote: 'I don’t understand why I can remember this crap but I can NEVER remember anything I actually NEED to.', semester: 'Fall', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Kyrah', quote: 'He’s not as hot in this scene cause he’s sweatin’ his balls off.', semester: 'Fall', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth', quote: 'Not clickbait, Vice presidents daughter dates man with a tattoo.', semester: 'Fall', category: 'Just Plain Weird' },
+            // Winter Semester Quotes
+            // January
+            { speaker: 'Kyrah', quote: 'Is bosom your chest or your butt?', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Kyrah', quote: 'As a kid I used to be like “that’s a little too much skin” but now I’m like “lemme see it”.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kyrah', quote: 'Booty booty booty shorts!', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth', quote: 'Yummy lotteries and liquors!', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Pam/Kyrah/Anna', quote: 'Pam: He’s a minor! Kyrah: Okay, but if he wasn’t- Anna: But he’s still your cousin!', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Anna', quote: 'Okay, why are your toes on my toes?', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Elisabeth', quote: 'Pam, I think I just got impaled on your holy stick.', semester: 'Winter', category: 'Only at BYU' }, // Priesthood context
+            { speaker: 'Elisabeth', quote: 'Anna’s Epitaph: Here lies Anna Johnson. A good friend to all. She was tall. Until her fall. Rest in peace. Or in pieces. We love you!', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Kyrah', quote: '100% please touch me like that.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kyrah', quote: 'I’m not saying he’s a bad looking kid, I’ve seen way worse.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam/Elisabeth', quote: 'Pam: So you only like smart men? Elisabeth: Ya because they are gonna be rich!', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kaylin', quote: 'Do you think if I crashed into another car it would count as my physics homework?', semester: 'Winter', category: 'Only at BYU' }, // Homework context
+            { speaker: 'Elisabeth', quote: 'I like watching other peoples insurance money get spent.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Pam', quote: 'At this point you might as well identify as a bicycle.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Livie/Kyrah', quote: 'Livie: Whoa you got a BADONKADONK. Kyrah: Oh, I’m saving these pants for my husband.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Anna', quote: 'You son of a… small donkey!', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Kyrah', quote: 'Sometimes it’s in the afterlife.', semester: 'Winter', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Kyrah', quote: 'I say this out of the kindness of my heart… but I hope you die before me so I can find your journal and read it.', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Kyrah', quote: 'I’m gonna be the greatest great grandma to your family.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Anna', quote: 'It’s all fun and games until it stabs me.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'Kyrah’s wedding cake will be made with SALT if she keeps being mean to me.', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Anna', quote: 'She’s going to shoot me… I can’t wait.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'Ooooo my fingers are crispy.', semester: 'Winter', category: 'Food Fixations' },
+            { speaker: 'Anna', quote: 'Someone’s going to think our butter got dusted with cocaine.', semester: 'Winter', category: 'Food Fixations' },
+            { speaker: 'Anna', quote: 'Cocaine butter would be highly addictive.', semester: 'Winter', category: 'Food Fixations' },
+            { speaker: 'Pam', quote: 'Select the appropriate slut unit.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Elisabeth', quote: 'Freezing off her fricker fracker frenaynays.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Izzy', quote: 'I would be SHATTING my pants.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'You are the juicer.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Kyrah', quote: 'I’m going on a mission! Let me be a hoe before I leave!', semester: 'Winter', category: 'Only at BYU' }, // Mission context
+            { speaker: 'Kaylin/Anna', quote: 'Kaylin: I thought you couldn’t run! Anna: I can when I’m committing a felony.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Kyrah', quote: 'We can drive through the canyon!… you guys aren’t dudes so it’s okay!', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kaylin/Anna', quote: 'Kaylin: If Jesus can walk on water, you can walk on snow. Anna: Well Jesus wasn’t wearing vans.', semester: 'Winter', category: 'Only at BYU' },
+            { speaker: 'Pam', quote: 'Your jokes are literally killing me.', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Kaylin', quote: 'I like the water to burn me… I want to feel something.', semester: 'Winter', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Anna', quote: 'Donald J Trump wants to get in good with the Mormons.', semester: 'Winter', category: 'Only at BYU' },
+            { speaker: 'Anna/Pam', quote: 'Anna: We know what’s up. Pam: Yeah, and it’s NOT my game.', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Pam/Kyrah', quote: 'Pam: I feel like a magician when I do this. Kyrah: You look like a stripper when you do that.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'My homework is manageable if I sell my soul to the devil.', semester: 'Winter', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Pam', quote: 'Why did you but-but my butt with your toes?', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Kaylin', quote: 'They can’t flavor them like vapes?', semester: 'Winter', category: 'Food Fixations' },
+            { speaker: 'Anna', quote: 'Kyrah, do not lust in your heart after Glen Powell.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            // February
+            { speaker: 'Jake', quote: 'I don’t wanna be a Portland lesbian.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Anna/Kyrah', quote: 'Anna: That thing will start breeding if we let it live for much longer. Kyrah: We better send it off to Africa.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Kyrah', quote: 'Anyone have any ones? I’ll dance for you.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Kaylin', quote: 'He’s got a punchable face.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth', quote: 'As much as we recognize that she is also a child of God, if I were God she wouldn’t be my favorite.', semester: 'Winter', category: 'Only at BYU' }, // Religious context
+            { speaker: 'Kade', quote: 'So obviously we won’t all be kissing each other.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kyrah', quote: 'Uh oh he’s looking between my legs.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Prof Kearl', quote: 'After you see your score, don’t go do a swan dive off the Kimball tower.', semester: 'Winter', category: 'Only at BYU' }, // Kimball Tower ref
+            { speaker: 'Prof Smith/Kyrah', quote: 'Prof Smith: Do you want to sin at this time? Kyrah: Yes, Hank, I do.', semester: 'Winter', category: 'Only at BYU' }, // Prof/sin context
+            { speaker: 'Livie', quote: 'I could teach him some French skills.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam', quote: 'Don’t worry I won’t dissect you.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'What if I help God invest his stocks?', semester: 'Winter', category: 'Only at BYU' }, // Religious context
+            { speaker: 'Elisabeth', quote: 'I’ve always wanted to try drugs.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Anna/Pam', quote: 'Anna: You’ve got that dog in you. Pam: *woof*', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'Okay, so I was on a heroin kick earlier.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Elisabeth', quote: 'You should rate all of our feet.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Braxton', quote: 'Well FRICK Patricia and Cassie.', semester: 'Winter', category: 'Just Plain Weird' },
+            // March
+            { speaker: 'Prof Smith', quote: '‘Hey Bobby!’ ‘Hey fellas, you don’t wanna be out on the streets tonight there’s lots of drugs’', semester: 'Winter', category: 'Only at BYU' }, // Prof context
+            { speaker: 'Pam', quote: 'Do you want to get assaulted again?', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Max', quote: 'So, he grabbed me by my skinny little white arm and threw me off… today I would like to talk about Christlike attributes.', semester: 'Winter', category: 'Only at BYU' }, // Sacrament Meeting context
+            { speaker: 'Pam', quote: 'What does he mean French lessons?', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Kyrah', quote: 'How am I supposed to take my clothes off?', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Anna', quote: 'You could have chosen Satans plan!', semester: 'Winter', category: 'Only at BYU' }, // Religious context
+            { speaker: 'Anna', quote: 'You need priesthood power for that word.', semester: 'Winter', category: 'Only at BYU' }, // Religious context
+            { speaker: 'Tom', quote: 'I wish I was Todd… but I’m Tom.', semester: 'Winter', category: 'Only at BYU' }, // Sacrament Meeting context
+            { speaker: 'Anna', quote: 'I think I understand ancient Egyptian philosophy now.', semester: 'Winter', category: 'Deep Thoughts & Dread' },
+            { speaker: 'Pam', quote: 'What are you a priesthood holder? This is not a household.', semester: 'Winter', category: 'Only at BYU' }, // Religious context
+            { speaker: 'Elisabeth', quote: 'Is Tourette\'s even real?', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Anna/Elisabeth', quote: 'Anna: George Washington, smash or pass? Elisabeth: Smash!', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Elisabeth', quote: 'That’s more testosterone than the dorm can handle.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Nathan', quote: 'I keep getting smashed, this is so unfair.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Anna', quote: 'She’s so upset she did the Disney knees.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'I love whipping my friends.', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Elisabeth', quote: 'Those guys look like they belong in a k drama.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam', quote: 'See? He’s got balls!', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Nathan', quote: 'Does he bite you frequently?', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Nathan/Elisabeth', quote: 'Nathan: Do you look at feet pics on only fans? Elisabeth : No she sells them on Etsy.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Nathan', quote: 'My mom says I’m this tall because when I was in the womb we lived next to a meth house.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Pam', quote: 'I\'m gonna make pipsqueak squeak.', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Kyrah/Anna', quote: 'Kyrah: If this is what I look like when I am pregnant, I don\'t want it. Anna: What, the child?', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Anna', quote: 'If we had lived in Book of Mormon times, I would have slapped you with a stick.', semester: 'Winter', category: 'Only at BYU' }, // Religious context
+            { speaker: 'Elisabeth', quote: 'I can try, everyone here knows I’m incompetent.', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Brandon', quote: 'Wow Ty is SO FAT.', semester: 'Winter', category: 'Just Plain Weird' },
+            // April
+            { speaker: 'Kyrah', quote: 'You’ve got bad insides, but you’ve got gorgeous outsides.', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Elisabeth', quote: 'This one looks disabled.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Pam', quote: 'Do you wanna wear the skin of the lemon?', semester: 'Winter', category: 'Food Fixations' },
+            { speaker: 'Elisabeth', quote: 'If you saw me stripping a lemon would you judge me?', semester: 'Winter', category: 'Food Fixations' },
+            { speaker: 'Elisabeth', quote: 'There’s three things I always ignore about the gospel: polygamy, race in the priesthood, and Isaiah.', semester: 'Winter', category: 'Only at BYU' }, // Religious context
+            { speaker: 'Elisabeth', quote: 'Our couch is tainted with sin.', semester: 'Winter', category: 'Only at BYU' }, // Religious context
+            { speaker: 'Kyrah', quote: 'Okay, if I show you a picture of this guy you need to literally bark.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam', quote: 'Bro they keep scanning my bracelet like im groceries or something.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Elisabeth', quote: 'She says that these stars are perfect the way they are, even though they’re brown.', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Kyrah', quote: 'You just freaking Todd-Ed me.', semester: 'Winter', category: 'Only at BYU' }, // Todd context
+            { speaker: 'Kyrah/Anna', quote: 'Kyrah: Is it just me or does it smell fruity outside? Anna: No, but it looks fruity.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Nathan', quote: 'I Nephi being exceedingly swole.', semester: 'Winter', category: 'Only at BYU' }, // Religious context
+            { speaker: 'Elisabeth', quote: 'She went from being bananas to a Big Mac.', semester: 'Winter', category: 'Food Fixations' },
+            { speaker: 'Elisabeth', quote: 'That’s because he’s hot and we’re annoying.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Sister Dickerson', quote: 'Make sure he’s a hottie, but also a hottie in the priesthood.', semester: 'Winter', category: 'Only at BYU' }, // Religious context
+            { speaker: 'Kyrah', quote: 'He’s actually a really fruity guy.', semester: 'Winter', category: 'Dating Drama & Disasters' },
+            { speaker: 'Pam/Anna', quote: 'Pam: I hate how much that made me laugh. Anna: What? That you have the soul of a chubby 12-year-old boy?', semester: 'Winter', category: 'Roommate Realities' },
+            { speaker: 'Kyrah', quote: 'You just about took my pants off bro!', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Elisabeth', quote: 'I can stop riding the bus illegally in constant fear of the cops!', semester: 'Winter', category: 'Just Plain Weird' },
+            { speaker: 'Anna', quote: 'I love Todd more than I love Econ.', semester: 'Winter', category: 'Only at BYU' }, // Todd/Econ context
+            { speaker: 'Elisabeth', quote: 'We can’t look like big backs getting more food while we’re actively chewing food.', semester: 'Winter', category: 'Food Fixations' },
+            { speaker: 'Livie', quote: 'If God was okay with gluttony, this is what heaven would look like.', semester: 'Winter', category: 'Food Fixations' },
+            { speaker: 'Anna', quote: 'You wood-chipping neighrawr.', semester: 'Winter', category: 'Just Plain Weird' }
+        ];
+
+
+        // --- Game State Variables ---
+        let gameState = {
+            players: [],
+            currentPlayerIndex: 0,
+            // Updated categories
+            categories: [
+                "Dating Drama & Disasters", "Deep Thoughts & Dread", "Food Fixations",
+                "Only at BYU", "Roommate Realities", "Just Plain Weird"
+            ].slice(0, 6), // Use exactly 6 categories
+            pointValues: [200, 400, 600, 800, 1000],
+            boardData: {},
+            currentQuestion: null,
+            questionsAnswered: 0,
+            totalQuestions: 0,
+        };
+
+        // --- DOM Elements ---
+        // (No changes needed here)
+        const playerSetupScreen = document.getElementById('player-setup-screen');
+        const jeopardyBoardScreen = document.getElementById('jeopardy-board-screen');
+        const quoteScreen = document.getElementById('quote-screen');
+        const winnerScreen = document.getElementById('winner-screen');
+        const playerInputsContainer = document.getElementById('player-inputs');
+        const addPlayerBtn = document.getElementById('add-player-btn');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const jeopardyBoard = document.getElementById('jeopardy-board');
+        const jeopardyBoardContainer = document.getElementById('jeopardy-board-container');
+        const playerScoresContainer = document.getElementById('player-scores-container');
+        const quoteScreenCategory = document.getElementById('quote-screen-category');
+        const quoteScreenText = document.getElementById('quote-screen-text');
+        const quoteScreenInputLabel = document.querySelector('#quote-screen-input-area label');
+        const quoteScreenInput = document.getElementById('quote-screen-input');
+        const quoteScreenFeedback = document.getElementById('quote-screen-feedback');
+        const submitQuoteBtn = document.getElementById('submit-quote-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const winnerMessageElement = document.getElementById('winner-message'); // Get winner message element
+
+
+        // --- Utility Functions ---
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // --- Screen Management ---
+        function showScreen(screenToShow) {
+            // console.log(`Attempting to show screen: ${screenToShow ? screenToShow.id : 'null'}`);
+            if (!screenToShow) {
+                console.error("showScreen called with null or undefined screen element.");
+                return;
+            }
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            screenToShow.classList.add('active');
+            // console.log(`Screen ${screenToShow.id} should now be active.`);
+        }
+
+        // --- Question Processing Function (Refined for line breaks) ---
+        function processQuoteForDisplay(quoteObj) {
+            const processed = { ...quoteObj }; // Copy original
+            processed.type = 'whoSaid'; // Set default type
+
+            // Regex to find speaker prefixes (Name: or *Action* Name:) at the start or after punctuation/asterisk + space
+            // It captures the punctuation/space/asterisk before the prefix
+            const speakerPrefixRegex = /((?:[.?!]\s|\*\s|^))[A-Za-z\'* ]+:\s*/g;
+
+            let displayQuote = processed.quote
+                // Replace prefixes with the captured preceding character(s) + <br>
+                .replace(speakerPrefixRegex, '$1<br>')
+                // Handle the very first prefix specifically if it wasn't caught above
+                .replace(/^[A-Za-z\'* ]+:\s*/, ''); // Remove first prefix if it exists, don't add <br>
+
+
+            // Remove leading <br> if accidentally added
+            if (displayQuote.startsWith('<br>')) {
+                displayQuote = displayQuote.substring(4).trim();
+            }
+
+            // Remove potential leading/trailing spaces/punctuation from the removal
+            displayQuote = displayQuote.replace(/^\s*[-.,!?;:]*\s*|\s*[-.,!?;:]*\s*$/g, '');
+
+            // Remove outer quotes
+            processed.questionText = displayQuote.trim();
+
+            // **REMOVED** fill-in-the-blank logic
+
+            return processed;
+        }
+
+
+        // --- Game Setup Functions ---
+        function addPlayerInput() {
+            // console.log("Add Player button clicked.");
+            const playerCount = playerInputsContainer.children.length;
+            if (playerCount < 8) {
+                const newInput = document.createElement('input');
+                newInput.type = 'text';
+                newInput.className = 'player-name-input'; // text-black via CSS
+                newInput.placeholder = `Player ${playerCount + 1} Name`;
+                playerInputsContainer.appendChild(newInput);
+            }
+            if (playerInputsContainer.children.length >= 8) {
+                addPlayerBtn.disabled = true;
+                addPlayerBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function initializeGame() {
+            // console.log("Start Game button clicked. Initializing game...");
+            try {
+                // 1. Get Player Names
+                const nameInputs = playerInputsContainer.querySelectorAll('.player-name-input');
+                gameState.players = [];
+                nameInputs.forEach((input, index) => {
+                    const name = input.value.trim();
+                    const playerName = name || `Player ${index + 1}`;
+                    if (playerName.trim()) {
+                        gameState.players.push({ name: playerName, score: 0, wrongAnswers: 0, disabled: false });
+                    }
+                });
+                // console.log("Players:", gameState.players);
+
+                if (gameState.players.length === 0) {
+                    alert("Please enter at least one player name.");
+                    // console.log("Initialization stopped: No players entered.");
+                    return;
+                }
+
+                // 2. Reset Game State
+                gameState.currentPlayerIndex = 0;
+                gameState.boardData = {};
+                gameState.questionsAnswered = 0;
+                gameState.totalQuestions = gameState.categories.length * gameState.pointValues.length;
+                gameState.currentQuestion = null;
+                // console.log("Game state reset.");
+
+                // 3. Prepare Quotes for the Board (Revised Logic)
+                const availableQuotes = shuffleArray([...allQuotes]); // Shuffle all available quotes
+                gameState.categories.forEach(category => {
+                    gameState.boardData[category] = {};
+                    // Filter quotes specifically for this category *from the master shuffled list*
+                    const categoryQuotesPool = availableQuotes.filter(q => q.category === category);
+                    // console.log(`Category: ${category}, Pool size: ${categoryQuotesPool.length}`); // Debug pool size
+
+                    gameState.pointValues.forEach((value) => {
+                        // Try to get the next available quote *from this category's pool*
+                        const quoteData = categoryQuotesPool.shift(); // Take the next one from the pool
+
+                        if (quoteData) {
+                            const processedQuoteData = processQuoteForDisplay(quoteData);
+                            const safeCategory = category.replace(/[^a-zA-Z0-9]/g, '-');
+                            gameState.boardData[category][value] = {
+                                ...processedQuoteData,
+                                answered: false,
+                                id: `${safeCategory}-${value}`
+                            };
+                            // Remove the used quote from the main availableQuotes pool to prevent reuse in other categories if pools overlap
+                            const indexInMainPool = availableQuotes.findIndex(q => q === quoteData);
+                            if (indexInMainPool > -1) {
+                                availableQuotes.splice(indexInMainPool, 1);
+                            }
+                        } else {
+                            // If no more quotes for this category, create a placeholder
+                            const safeCategory = category.replace(/[^a-zA-Z0-9]/g, '-');
+                            gameState.boardData[category][value] = {
+                                quote: "No quote available.",
+                                speaker: "N/A",
+                                category: category,
+                                questionText: "--", // Placeholder text for display
+                                type: 'empty',
+                                answered: true, // Mark as answered immediately
+                                id: `${safeCategory}-${value}`
+                            };
+                            console.warn(`No more quotes for category "${category}" at value ${value}.`);
+                        }
+                    });
+                });
+                // console.log("Board data prepared:", gameState.boardData);
+
+                // 4. Build UI
+                // console.log("Building board...");
+                buildBoard();
+                // console.log("Updating player scores display...");
+                updatePlayerScoresDisplay();
+
+                // 5. Show Board Screen
+                // console.log("Attempting to show jeopardy board screen...");
+                if (jeopardyBoardScreen) {
+                    showScreen(jeopardyBoardScreen);
+                } else {
+                    console.error("ERROR: jeopardyBoardScreen element not found!");
+                }
+                // console.log("Highlighting current player...");
+                highlightCurrentPlayer();
+                // console.log("Initialization complete.");
+
+            } catch (error) {
+                console.error("Error during game initialization:", error);
+                alert("An error occurred while starting the game. Please check the console (F12).");
+            }
+        }
+
+
+        function buildBoard() {
+            jeopardyBoard.innerHTML = '';
+            // Add Category Headers
+            gameState.categories.forEach(category => {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'category-header'; // text-byu-navy via CSS
+                headerDiv.textContent = category;
+                jeopardyBoard.appendChild(headerDiv);
+            });
+            // Add Question Cells
+            gameState.pointValues.forEach(value => {
+                gameState.categories.forEach(category => {
+                    const cellData = gameState.boardData[category]?.[value];
+                    // Ensure cellData exists before creating the cell
+                    if (cellData) {
+                        const cellDiv = document.createElement('div');
+                        cellDiv.className = 'jeopardy-cell'; // text-byu-navy via CSS
+                        cellDiv.id = cellData.id;
+                        cellDiv.dataset.category = category;
+                        cellDiv.dataset.value = value;
+                        if (cellData.answered) { // Check if already answered (includes placeholders)
+                            cellDiv.classList.add('answered'); // grayed out style
+                            cellDiv.textContent = ''; // Display nothing for answered/empty cells
+                        } else {
+                            cellDiv.textContent = value; // Display points
+                            cellDiv.addEventListener('click', handleCellClick);
+                        }
+                        jeopardyBoard.appendChild(cellDiv);
+                    } else {
+                        // This case should ideally not be reached if initialization logic is correct
+                        const emptyDiv = document.createElement('div');
+                        emptyDiv.className = 'jeopardy-cell answered'; // Style as answered/empty
+                        emptyDiv.textContent = '';
+                        jeopardyBoard.appendChild(emptyDiv);
+                        console.error(`CRITICAL: Missing cell data for ${category} - ${value} during buildBoard.`);
+                    }
+                });
+            });
+        }
+
+
+        function updatePlayerScoresDisplay() {
+            playerScoresContainer.innerHTML = '';
+            gameState.players.forEach((player, index) => {
+                const scoreDiv = document.createElement('div');
+                scoreDiv.className = 'player-score-item'; // Base style
+                scoreDiv.id = `player-score-${index}`;
+                // Apply disabled style FIRST if needed
+                if (player.disabled) {
+                    scoreDiv.classList.add('disabled'); // Applies gray out styles
+                }
+                // Apply current turn style if it's their turn AND they are not disabled
+                if (index === gameState.currentPlayerIndex && !player.disabled) {
+                    scoreDiv.classList.add('current-turn'); // Applies yellow bg and bold
+                }
+                scoreDiv.textContent = `${player.name}: ${player.score}`;
+                playerScoresContainer.appendChild(scoreDiv);
+            });
+        }
+
+
+        function highlightCurrentPlayer() {
+            // Remove highlight from all first
+            document.querySelectorAll('.player-score-item').forEach(el => el.classList.remove('current-turn'));
+            // Add highlight only to the active current player
+            const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+            if (currentPlayer && !currentPlayer.disabled) {
+                const currentPlayerElement = document.getElementById(`player-score-${gameState.currentPlayerIndex}`);
+                if (currentPlayerElement) {
+                    currentPlayerElement.classList.add('current-turn'); // Applies yellow bg and bold
+                }
+            }
+        }
+
+
+        // --- Gameplay Functions ---
+        function handleCellClick(event) {
+            // console.log("Cell clicked:", event.currentTarget.id);
+            const cell = event.currentTarget;
+            const category = cell.dataset.category;
+            const value = parseInt(cell.dataset.value);
+            const questionData = gameState.boardData[category]?.[value];
+            const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+
+            // Added check for questionData existence
+            if (questionData && !questionData.answered && currentPlayer && !currentPlayer.disabled) {
+                // Check specifically if it's a placeholder quote
+                if (questionData.quote === "No quote available.") {
+                    console.warn(`Clicked cell ${category}-${value} has no valid quote.`);
+                    // Mark as answered visually and in state
+                    cell.classList.add('answered');
+                    cell.textContent = '';
+                    cell.removeEventListener('click', handleCellClick);
+                    gameState.boardData[category][value].answered = true;
+                    return; // Stop processing this click
+                }
+                gameState.currentQuestion = { category, value, ...questionData };
+                // console.log("Showing quote screen for:", gameState.currentQuestion);
+                populateQuoteScreen();
+                showScreen(quoteScreen);
+            } else {
+                // console.log("Cell click ignored. Data:", questionData, "Current Player:", currentPlayer);
+            }
+        }
+
+        function populateQuoteScreen() {
+            if (!gameState.currentQuestion) return;
+            const { category, questionText } = gameState.currentQuestion;
+            quoteScreenCategory.textContent = category;
+            // Use innerHTML to render <br> tags correctly
+            quoteScreenText.innerHTML = questionText; // Black text via CSS
+            quoteScreenInput.value = '';
+            quoteScreenFeedback.textContent = '';
+            quoteScreenFeedback.className = 'quote-screen-feedback'; // Reset feedback class
+            quoteScreenInput.disabled = false;
+            submitQuoteBtn.disabled = false;
+            quoteScreenInput.focus();
+        }
+
+
+        function submitQuoteAnswer() {
+            // console.log("Submit answer clicked.");
+            if (!gameState.currentQuestion) {
+                console.error("Submit clicked but no current question!");
+                return;
+            }
+
+            const { speaker, value, quote, category, id } = gameState.currentQuestion;
+            const playerAnswer = quoteScreenInput.value.trim().toLowerCase();
+            const correctSpeakers = speaker.toLowerCase().split('/').map(s => s.trim());
+            const isCorrect = correctSpeakers.includes(playerAnswer);
+
+            quoteScreenInput.disabled = true;
+            submitQuoteBtn.disabled = true;
+
+            quoteScreenFeedback.classList.remove('feedback-correct', 'feedback-incorrect');
+            if (isCorrect) {
+                quoteScreenFeedback.textContent = "Correct!";
+                quoteScreenFeedback.classList.add('feedback-correct'); // Green text
+                handleScoreUpdate(true);
+            } else {
+                // Updated incorrect feedback - removed full quote
+                quoteScreenFeedback.textContent = `Incorrect. Speaker: ${speaker}`;
+                quoteScreenFeedback.classList.add('feedback-incorrect'); // Red text
+                handleScoreUpdate(false);
+            }
+
+            gameState.boardData[category][value].answered = true;
+            // gameState.questionsAnswered += 1; // Increment happens *after* score update
+
+            // Update the cell on the board immediately in the background
+            const answeredCell = document.getElementById(id);
+            if (answeredCell) {
+                answeredCell.classList.add('answered'); // Applies grayed-out style
+                answeredCell.textContent = '';
+                answeredCell.removeEventListener('click', handleCellClick);
+            } else {
+                console.warn(`Could not find cell with ID ${id} to mark as answered.`);
+            }
+
+            // Wait before returning to board or ending game
+            setTimeout(() => {
+                // Check game end *after* potential player disablement in handleScoreUpdate
+                if (checkGameEnd()) {
+                    // console.log("Game ended. Showing winner screen.");
+                    showWinnerScreen();
+                } else {
+                    nextTurn();
+                    // console.log("Returning to board screen. Next player:", gameState.currentPlayerIndex);
+                    showScreen(jeopardyBoardScreen);
+                    updatePlayerScoresDisplay(); // Update scores now visible
+                    highlightCurrentPlayer(); // Highlight next player
+                }
+                gameState.currentQuestion = null;
+            }, 2000);
+        }
+
+        function handleScoreUpdate(correct) {
+            const { value } = gameState.currentQuestion;
+            const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+            if (!currentPlayer || currentPlayer.disabled) return; // Check if player exists and is not disabled
+
+            if (correct) {
+                currentPlayer.score += value;
+            } else {
+                currentPlayer.score -= value;
+                currentPlayer.wrongAnswers += 1;
+                if (currentPlayer.wrongAnswers >= 2) {
+                    currentPlayer.disabled = true;
+                    // console.log(`Player ${currentPlayer.name} disabled.`); // Log when disabled
+                }
+            }
+            gameState.questionsAnswered += 1; // Increment answered count *after* handling score/disablement
+            // console.log(`Score updated for player ${currentPlayer.name}. Correct: ${correct}. New score: ${currentPlayer.score}`);
+        }
+
+
+        function nextTurn() {
+            let activePlayers = gameState.players.filter(p => !p.disabled);
+            if (activePlayers.length === 0) return; // Should be caught by checkGameEnd
+
+            let nextPlayerFound = false;
+            let attempts = 0;
+            const maxAttempts = gameState.players.length * 2; // Safety break
+            do {
+                gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
+                if (!gameState.players[gameState.currentPlayerIndex].disabled) {
+                    nextPlayerFound = true;
+                }
+                attempts++;
+            } while (!nextPlayerFound && attempts < maxAttempts);
+
+            // If loop finished without finding a player (unlikely but possible), log it
+            if (!nextPlayerFound) {
+                console.warn("Could not find next active player after multiple attempts.");
+            }
+        }
+
+        // --- UPDATED Winning Condition Check ---
+        function checkGameEnd() {
+            // Check if only one player remains active
+            const activePlayers = gameState.players.filter(p => !p.disabled);
+            if (gameState.players.length > 1 && activePlayers.length === 1) {
+                console.log("Game end condition: Only one player left.");
+                return true; // End if only one player left (and more than 1 started)
+            }
+            // Check if all questions have been answered
+            if (gameState.questionsAnswered >= gameState.totalQuestions) {
+                console.log("Game end condition: All questions answered.");
+                return true; // End if all questions answered
+            }
+            // Check if zero players are active (edge case)
+            if (activePlayers.length === 0 && gameState.players.length > 0) {
+                console.log("Game end condition: No active players left.");
+                return true;
+            }
+
+            return false; // Otherwise, game continues
+        }
+
+        // --- UPDATED Winner Screen Logic ---
+        function showWinnerScreen() {
+            const winnerMessageElement = document.getElementById('winner-message');
+            if (!winnerMessageElement) {
+                console.error("Winner message element not found!");
+                showScreen(winnerScreen); // Still show the screen, but without message
+                return;
+            }
+            winnerMessageElement.textContent = ''; // Clear previous message
+
+            const activePlayers = gameState.players.filter(p => !p.disabled);
+
+            // Scenario 1: Only one player left active
+            if (gameState.players.length > 1 && activePlayers.length === 1) {
+                const winner = activePlayers[0];
+                winnerMessageElement.textContent = `Congratulations ${winner.name}, you are the last one standing!`;
+            }
+            // Scenario 2: All questions answered OR no active players left (tie or highest score)
+            else {
+                const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
+                if (sortedPlayers.length > 0) {
+                    const winner = sortedPlayers[0];
+                    // Check for ties
+                    const potentialTies = sortedPlayers.filter(p => p.score === winner.score);
+                    if (potentialTies.length > 1) {
+                        winnerMessageElement.textContent = `It's a tie between ${potentialTies.map(p => p.name).join(' and ')} with ${winner.score} points!`;
+                    } else {
+                        winnerMessageElement.textContent = `Congratulations ${winner.name}, you won with ${winner.score} points!`;
+                    }
+                } else {
+                    // This case happens if all players get disabled before any questions are answered correctly
+                    winnerMessageElement.textContent = "No winner this round!";
+                }
+            }
+
+            // Podium logic removed
+
+            showScreen(winnerScreen); // Show the winner screen
+        }
+
+
+        function resetForNewGame() {
+            // console.log("Resetting for new game.");
+            playerInputsContainer.innerHTML = '<input type="text" class="player-name-input" placeholder="Player 1 Name">'; // text-black via CSS
+            addPlayerBtn.disabled = false;
+            addPlayerBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            // Reset game state with NEW categories
+            gameState = {
+                players: [],
+                currentPlayerIndex: 0,
+                categories: [
+                    "Dating Drama & Disasters", "Deep Thoughts & Dread", "Food Fixations",
+                    "Only at BYU", "Roommate Realities", "Just Plain Weird"
+                ].slice(0, 6),
+                pointValues: [200, 400, 600, 800, 1000],
+                boardData: {},
+                currentQuestion: null,
+                questionsAnswered: 0,
+                totalQuestions: 0
+            };
+            showScreen(playerSetupScreen);
+        }
+
+        // --- Event Listeners ---
+        // Wrapped in DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function () {
+            // console.log("DOM fully loaded and parsed.");
+
+            // Re-get elements inside the listener to ensure scope and timing
+            const localAddPlayerBtn = document.getElementById('add-player-btn');
+            const localStartGameBtn = document.getElementById('start-game-btn');
+            const localSubmitQuoteBtn = document.getElementById('submit-quote-btn');
+            const localPlayAgainBtn = document.getElementById('play-again-btn');
+            const localQuoteScreenInput = document.getElementById('quote-screen-input');
+            const localPlayerSetupScreen = document.getElementById('player-setup-screen');
+
+            // Attach listeners only if elements are found
+            if (localAddPlayerBtn) {
+                // console.log("Attaching listener to Add Player button.");
+                localAddPlayerBtn.addEventListener('click', addPlayerInput);
+            } else { console.error("Add Player button not found!"); }
+
+            if (localStartGameBtn) {
+                // console.log("Attaching listener to Start Game button.");
+                localStartGameBtn.addEventListener('click', initializeGame);
+            } else { console.error("Start Game button not found!"); }
+
+            if (localSubmitQuoteBtn) {
+                // console.log("Attaching listener to Submit Quote button.");
+                localSubmitQuoteBtn.addEventListener('click', submitQuoteAnswer);
+            } else { console.error("Submit Quote button not found!"); }
+
+            if (localPlayAgainBtn) {
+                // console.log("Attaching listener to Play Again button.");
+                localPlayAgainBtn.addEventListener('click', resetForNewGame);
+            } else { console.error("Play Again button not found!"); }
+
+            if (localQuoteScreenInput) {
+                // console.log("Attaching keypress listener to Quote Input.");
+                localQuoteScreenInput.addEventListener('keypress', function (event) {
+                    const currentSubmitBtn = document.getElementById('submit-quote-btn');
+                    if (event.key === 'Enter' && currentSubmitBtn && !currentSubmitBtn.disabled) {
+                        event.preventDefault();
+                        submitQuoteAnswer();
+                    }
+                });
+            } else { console.error("Quote Screen Input not found!"); }
+
+            // Initial Setup
+            if (localPlayerSetupScreen) {
+                // console.log("Showing initial setup screen.");
+                showScreen(localPlayerSetupScreen); // Show setup screen by default
+            } else {
+                console.error("Player setup screen not found on DOMContentLoaded");
+            }
+        });
+
+    </script>
+
+</body>
+
+</html>
