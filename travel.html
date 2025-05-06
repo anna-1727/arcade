@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny Island Trader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        /* Font and Base Styles */
+        body,
+        button,
+        input,
+        select,
+        textarea,
+        label {
+            font-family: 'VT323', monospace;
+            font-size: 1.1rem;
+        }
+
+        body {
+            background-color: #f0fdf4;
+            /* emerald-50 */
+        }
+
+        /* Screen Containers */
+        #start-screen,
+        #travel-map-screen,
+        #game-screen,
+        #shipyard-screen,
+        #event-screen {
+            display: none;
+        }
+
+        #start-screen.active,
+        #travel-map-screen.active,
+        #game-screen.active,
+        #shipyard-screen.active,
+        #event-screen.active {
+            display: block;
+        }
+
+        #game-screen.active {
+            display: flex;
+        }
+
+        /* Start, Map, Shipyard, Event Screen Base Styling */
+        #start-screen,
+        #travel-map-screen,
+        #shipyard-screen,
+        #event-screen {
+            background-color: #fff7ed;
+            /* orange-50 */
+            border: 4px dashed #fdba74;
+            /* orange-300 */
+            color: #c2410c;
+            /* orange-700 */
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 95%;
+            width: 500px;
+            margin: 1rem auto;
+            text-align: center;
+        }
+
+        #shipyard-screen .shipyard-section {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 2px dashed #fdba74;
+            text-align: left;
+        }
+
+        #shipyard-screen .color-options,
+        #shipyard-screen .flag-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        #shipyard-screen .color-btn,
+        #shipyard-screen .flag-btn {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #c2410c;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 1px 1px 0px #9a3412;
+        }
+
+        #shipyard-screen .color-btn:active,
+        #shipyard-screen .flag-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: none;
+        }
+
+        #event-screen #event-details {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background-color: #ffedd5;
+            /* orange-100 */
+            border: 2px solid #fed7aa;
+            /* orange-200 */
+            border-radius: 6px;
+            min-height: 80px;
+            color: #9a3412;
+            /* orange-800 */
+        }
+
+        .unlock-hint {
+            font-size: 0.9rem;
+            font-style: italic;
+            color: #9a3412;
+            /* orange-800 */
+            margin-top: 0.25rem;
+        }
+
+        /* Game Container Styling */
+        .game-container {
+            max-width: 900px;
+            min-height: 90vh;
+            border: 4px solid #a5f3fc;
+            /* cyan-200 */
+            background-color: #ecfdf5;
+            /* emerald-50 */
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin: 1rem auto;
+        }
+
+        .sidebar {
+            background-color: #ffe4e6;
+            /* pink-100 */
+            border-right: 4px solid #fbcfe8;
+            /* pink-200 */
+            color: #831843;
+            /* pink-900 */
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .main-content {
+            background-color: #f0f9ff;
+            /* sky-50 */
+            color: #075985;
+            /* sky-900 */
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .market {
+            overflow-y: auto;
+            padding: 1rem;
+            flex-grow: 1;
+        }
+
+        .island-header {
+            background-color: #a5f3fc;
+            /* cyan-200 */
+            color: #164e63;
+            /* cyan-900 */
+            border-bottom: 4px solid #67e8f9;
+            /* cyan-300 */
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .market-item {
+            border: 2px solid #fecdd3;
+            /* pink-200 */
+            background-color: #ffffff;
+            /* white */
+            color: #500724;
+            /* pink-950 */
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        /* Button Styles */
+        .btn {
+            border: 2px solid #0d9488;
+            /* teal-600 */
+            background-color: #99f6e4;
+            /* teal-200 */
+            color: #134e4a;
+            /* teal-900 */
+            box-shadow: 2px 2px 0px #115e59;
+            /* teal-800 */
+            transition: all 0.1s ease-in-out;
+            text-transform: uppercase;
+            padding: 8px 14px;
+            font-size: 1rem;
+            line-height: 1.2rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .btn:active:not(:disabled) {
+            box-shadow: none;
+            transform: translate(2px, 2px);
+        }
+
+        .btn-buy {
+            background-color: #a7f3d0;
+            border-color: #059669;
+            color: #064e3b;
+            box-shadow: 2px 2px 0px #065f46;
+        }
+
+        .btn-sell {
+            background-color: #fecdd3;
+            border-color: #e11d48;
+            color: #881337;
+            box-shadow: 2px 2px 0px #9f1239;
+        }
+
+        .btn-set-sail {
+            background-color: #fed7aa;
+            border-color: #ea580c;
+            color: #7c2d12;
+            box-shadow: 2px 2px 0px #9a3412;
+            font-size: 1.2rem;
+            padding: 12px 20px;
+        }
+
+        .btn-start,
+        .btn-map-action,
+        .btn-shipyard,
+        .btn-event {
+            background-color: #86efac;
+            border-color: #16a34a;
+            color: #14532d;
+            box-shadow: 3px 3px 0px #15803d;
+            font-size: 1.3rem;
+            padding: 15px 25px;
+        }
+
+        .btn-random {
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            margin-left: 10px;
+        }
+
+        .btn-back {
+            background-color: #fecdd3;
+            border-color: #e11d48;
+            color: #881337;
+            box-shadow: 2px 2px 0px #9f1239;
+            font-size: 1rem;
+            padding: 8px 16px;
+        }
+
+        .btn-small {
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            line-height: 1rem;
+        }
+
+        /* Smaller button for shipyard */
+
+
+        /* Input and Select Styling */
+        input[type="text"],
+        select {
+            border: 2px solid #fdba74;
+            /* orange-300 */
+            background-color: #ffedd5;
+            /* orange-100 */
+            color: #9a3412;
+            /* orange-800 */
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 4px;
+            width: 100%;
+        }
+
+        label {
+            margin-top: 10px;
+            display: block;
+            font-weight: bold;
+        }
+
+        /* Message Box Styling */
+        #message-box {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #fef3c7;
+            /* amber-100 */
+            color: #b45309;
+            /* amber-700 */
+            border: 2px solid #d97706;
+            /* amber-500 */
+            padding: 12px 22px;
+            border-radius: 8px;
+            font-size: 1rem;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 90%;
+        }
+
+        /* --- Visual Travel Map Styles --- */
+        #map-area {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background-color: #cffafe;
+            /* cyan-100 */
+            border: 3px solid #67e8f9;
+            /* cyan-300 */
+            border-radius: 8px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .map-island {
+            position: absolute;
+            background-color: #bef264;
+            /* lime-300 */
+            border: 2px solid #4d7c0f;
+            /* lime-700 */
+            border-radius: 35% 65% 60% 40% / 40% 50% 50% 60%;
+            width: 60px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.7rem;
+            line-height: 1;
+            padding: 3px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            color: #365314;
+            /* lime-900 */
+            box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+
+        .map-island:nth-child(odd) {
+            border-radius: 60% 40% 30% 70% / 50% 70% 30% 50%;
+        }
+
+        .map-island:hover:not(.locked):not(.current) {
+            transform: scale(1.1);
+            background-color: #a3e635;
+        }
+
+        .map-island.current {
+            border-color: #facc15;
+            /* yellow-400 */
+            background-color: #fde047;
+            /* yellow-300 */
+            transform: scale(1.1) rotate(-5deg);
+            box-shadow: 0 0 10px #facc15;
+            cursor: default;
+            border-radius: 50% 50% 40% 60% / 60% 40% 60% 40%;
+        }
+
+        .map-island.locked {
+            background-color: #d1d5db;
+            /* gray-300 */
+            border-color: #6b7280;
+            /* gray-500 */
+            color: #4b5563;
+            /* gray-600 */
+            cursor: not-allowed;
+            opacity: 0.7;
+            box-shadow: none;
+            border-radius: 50%;
+        }
+
+        .map-island.locked::after {
+            content: '(Locked)';
+            font-size: 0.6rem;
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.7);
+            padding: 0px 2px;
+            border-radius: 3px;
+            color: #4b5563;
+        }
+
+        .map-black-market {
+            position: absolute;
+            background-color: #4b5563;
+            /* gray-600 */
+            border: 2px solid #1f2937;
+            /* gray-800 */
+            border-radius: 20% 80% 30% 70% / 70% 30% 70% 30%;
+            /* Shifty shape */
+            width: 55px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.65rem;
+            line-height: 1;
+            padding: 3px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            color: #f9fafb;
+            /* gray-50 */
+            box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+
+        .map-black-market:hover {
+            transform: scale(1.1);
+            background-color: #52525b;
+            /* zinc-600 */
+        }
+
+
+        #map-boat {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            z-index: 20;
+            transform-origin: bottom center;
+            filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.3));
+        }
+
+        #map-boat svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #map-boat .hull {
+            fill: #a16207;
+            /* Default Brown */
+        }
+
+        #map-boat .mast {
+            fill: #a16207;
+            /* Default Brown */
+        }
+
+        #map-boat .sail {
+            fill: #f1f5f9;
+            /* Default White */
+        }
+
+        #map-boat .flag {
+            font-size: 12px;
+            text-anchor: middle;
+        }
+
+        /* Flag styling */
+
+        #map-boat:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .map-fishing-spot {
+            position: absolute;
+            width: 50px;
+            height: 40px;
+            background-color: #60a5fa;
+            /* blue-400 */
+            border: 2px dashed #2563eb;
+            /* blue-600 */
+            border-radius: 60% 40% 50% 50% / 50% 50% 60% 40%;
+            cursor: pointer;
+            z-index: 10;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+            box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #1e3a8a;
+            /* blue-900 */
+        }
+
+        .map-fishing-spot:hover {
+            transform: scale(1.1);
+            background-color: #93c5fd;
+            /* blue-300 */
+        }
+
+        #map-upgrade-boat.locked {
+            background-color: #e5e7eb;
+            border-color: #9ca3af;
+            color: #6b7280;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #map-upgrade-boat.unlocked-guide {
+            background-color: #fde047;
+            border-color: #eab308;
+            color: #854d0e;
+            cursor: default;
+            box-shadow: none;
+            font-size: 1.1rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+
+            #start-screen,
+            #travel-map-screen,
+            #shipyard-screen,
+            #event-screen {
+                width: 90%;
+            }
+
+            .game-container {
+                flex-direction: column;
+                min-height: 100vh;
+                border: none;
+                margin: 0;
+                max-width: 100%;
+            }
+
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 4px solid #fbcfe8;
+                flex-basis: auto;
+                padding-bottom: 1rem;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-around;
+            }
+
+            .sidebar>div {
+                flex-basis: 45%;
+            }
+
+            #captain-boat-info {
+                flex-basis: 95%;
+                text-align: center;
+            }
+
+            .main-content {
+                width: 100%;
+                flex-grow: 1;
+            }
+
+            .market-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .btn {
+                padding: 6px 10px;
+                font-size: 0.9rem;
+            }
+
+            .btn-set-sail {
+                font-size: 1rem;
+                padding: 10px 16px;
+            }
+
+            #message-box {
+                width: 90%;
+                bottom: 10px;
+                font-size: 0.9rem;
+                padding: 8px 15px;
+            }
+
+            .btn-random {
+                display: block;
+                margin-left: 0;
+                margin-top: 5px;
+                width: 100%;
+            }
+
+            #map-area {
+                height: 300px;
+            }
+
+            .map-island {
+                width: 45px;
+                height: 40px;
+                font-size: 0.6rem;
+            }
+
+            .map-island.locked::after {
+                font-size: 0.5rem;
+                bottom: -10px;
+            }
+
+            #map-boat {
+                width: 30px;
+                height: 30px;
+            }
+
+            .map-fishing-spot {
+                width: 40px;
+                height: 30px;
+                font-size: 0.6rem;
+            }
+
+            .map-black-market {
+                width: 45px;
+                height: 35px;
+                font-size: 0.6rem;
+            }
+        }
+
+        .link-home{
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 30px;
+        }
+    </style>
+</head>
+
+<body class="p-4 flex items-center justify-center min-h-screen">
+    <a class="link-home" href="index.html">HOME PAGE</a>
+    <div id="start-screen" class="active">
+        <h1 class="text-3xl font-bold mb-6">Welcome to Tiny Island Trader!</h1>
+        <div class="space-y-4 text-left">
+            <div> <label for="captain-name">Enter Your Name:</label> <input type="text" id="captain-name"
+                    placeholder="e.g., Stinky">
+                <p class="text-sm italic text-orange-600">We'll call you Captain [Your Name]!</p>
+            </div>
+            <div> <label for="boat-name-input">Name Your Boat:</label>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center"> <input type="text"
+                        id="boat-name-input" placeholder="e.g., The Salty Sardine" class="flex-grow"> <button
+                        id="random-boat-name" class="btn btn-random">Randomize</button> </div>
+            </div>
+            <div> <label for="start-island">Choose Starting Island:</label> <select id="start-island"></select> </div>
+            <div> <label for="start-specialty">Choose Starting Specialty:</label> <select id="start-specialty"></select>
+                <p id="specialty-desc" class="text-sm mt-1 italic text-orange-600"></p>
+            </div>
+        </div>
+        <button id="start-game-button" class="btn btn-start mt-8 w-full">Start Trading!</button>
+    </div>
+
+    <div id="game-screen" class="game-container">
+        <aside class="sidebar w-full sm:w-1/3 lg:w-1/4">
+            <h2 class="text-lg font-bold border-b-2 border-pink-300 pb-1 w-full">Status</h2>
+            <div id="captain-boat-info" class="font-semibold w-full"> Captain <span id="captain-name-display"></span> |
+                <span id="boat-name-display"></span> </div>
+            <div>💰 Gold: <span id="player-gold">100</span></div>
+            <div>📦 Cargo: <span id="cargo-current">0</span> / <span id="cargo-capacity">10</span></div>
+            <div class="flex-grow w-full">
+                <h3 class="font-semibold mb-2">Inventory:</h3>
+                <ul id="inventory-list" class="text-sm space-y-1 list-disc list-inside">
+                    <li>(Empty)</li>
+                </ul>
+            </div>
+            <div id="flavor-text"
+                class="text-sm italic p-2 bg-pink-50 rounded border border-pink-300 h-20 overflow-y-auto w-full">
+                Welcome, Captain! Ready to trade? </div>
+        </aside>
+        <main class="main-content w-full sm:w-2/3 lg:w-3/4">
+            <header class="island-header">
+                <h1 id="island-name" class="text-2xl font-bold">Island Name</h1>
+                <p id="island-desc" class="text-sm italic">Island description</p>
+            </header>
+            <section class="market">
+                <h2 class="text-xl font-bold mb-3">Marketplace</h2>
+                <div id="market-items" class="grid grid-cols-1 md:grid-cols-2 gap-3 market-grid"></div>
+            </section>
+            <footer class="p-4 text-center border-t-2 border-sky-200 mt-auto"> <button id="set-sail-button"
+                    class="btn btn-set-sail rounded">Set Sail!</button> </footer>
+        </main>
+    </div>
+
+    <div id="travel-map-screen">
+        <h1 class="text-3xl font-bold mb-4">Travel Map</h1>
+        <p class="mb-2">Current Location: <span id="map-current-location" class="font-semibold"></span></p>
+        <div id="map-area">
+            <svg id="svg-boat-template" style="display: none;" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+                <path class="hull" d="M 5 35 Q 10 45, 25 45 T 45 35 L 45 30 L 5 30 Z" />
+                <rect class="mast" x="23" y="5" width="4" height="30" />
+                <polygon class="sail" points="27,8 40,15 27,22" />
+                <polygon class="sail" points="23,20 15,25 23,30" /> <text class="flag" x="25" y="7">?</text>
+            </svg>
+        </div>
+        <div class="mt-6 pt-4 border-t-2 border-dashed border-orange-300"> <button id="map-upgrade-boat"
+                class="btn btn-map-action w-full locked"> Upgrade Boat <span id="upgrade-unlock-progress"></span>
+            </button> </div>
+    </div>
+
+    <div id="shipyard-screen">
+        <h1 class="text-3xl font-bold mb-6">Shipyard</h1>
+        <div class="shipyard-section">
+            <h2 class="text-xl font-semibold mb-2">Hull Reinforcement</h2>
+            <div class="mb-4"> Current Cargo Capacity: <span id="shipyard-current-capacity">10</span> </div>
+            <button id="upgrade-capacity-button" class="btn btn-shipyard btn-small"> Increase Capacity (+5) - Cost:
+                <span id="capacity-upgrade-cost">50</span>g </button>
+        </div>
+        <div id="shipyard-customization-section" class="shipyard-section" style="display: none;">
+            <h2 class="text-xl font-semibold mb-2">Customization</h2>
+            <div class="mb-2">
+                <h3 class="text-lg font-semibold">Hull Color (Cost: <span id="hull-color-cost">15</span>g)</h3>
+                <div id="hull-color-options" class="color-options"> <button class="color-btn"
+                        style="background-color: #a16207;" data-color="#a16207" title="Brown"></button> <button
+                        class="color-btn" style="background-color: #dc2626;" data-color="#dc2626" title="Red"></button>
+                    <button class="color-btn" style="background-color: #2563eb;" data-color="#2563eb"
+                        title="Blue"></button> <button class="color-btn" style="background-color: #16a34a;"
+                        data-color="#16a34a" title="Green"></button> <button class="color-btn"
+                        style="background-color: #ca8a04;" data-color="#ca8a04" title="Gold"></button> <button
+                        class="color-btn" style="background-color: #4b5563;" data-color="#4b5563" title="Gray"></button>
+                </div>
+            </div>
+            <div class="mb-2">
+                <h3 class="text-lg font-semibold">Sail Color (Cost: <span id="sail-color-cost">10</span>g)</h3>
+                <div id="sail-color-options" class="color-options"> <button class="color-btn"
+                        style="background-color: #f1f5f9;" data-color="#f1f5f9" title="White"></button> <button
+                        class="color-btn" style="background-color: #fecdd3;" data-color="#fecdd3" title="Pink"></button>
+                    <button class="color-btn" style="background-color: #a5f3fc;" data-color="#a5f3fc"
+                        title="Light Blue"></button> <button class="color-btn" style="background-color: #fef08a;"
+                        data-color="#fef08a" title="Yellow"></button> <button class="color-btn"
+                        style="background-color: #e5e7eb;" data-color="#e5e7eb" title="Light Gray"></button> </div>
+            </div>
+            <div class="mb-2">
+                <h3 class="text-lg font-semibold">Flag Symbol (Cost: <span id="flag-cost">25</span>g)</h3>
+                <div id="flag-options" class="flag-options"> <button class="flag-btn" data-flag="🏴‍☠️"
+                        title="Skull & Crossbones">🏴‍☠️</button> <button class="flag-btn" data-flag="🐟"
+                        title="Fish">🐟</button> <button class="flag-btn" data-flag="💖" title="Heart">💖</button>
+                    <button class="flag-btn" data-flag="⭐" title="Star">⭐</button> <button class="flag-btn"
+                        data-flag="?" title="Default">?</button> </div>
+            </div>
+        </div>
+        <div id="shipyard-routes-section" class="shipyard-section" style="display: none;">
+            <h2 class="text-xl font-semibold mb-2">Special Routes</h2>
+            <button id="buy-routes-button" class="btn btn-shipyard btn-small"> Purchase Route Info (Cost: <span
+                    id="routes-cost">100</span>g) </button>
+            <p class="text-sm italic text-orange-600 mt-1">Unlocks access to the Black Market and adds new goods to
+                circulation.</p>
+        </div>
+        <div id="customization-unlock-hint" class="unlock-hint mt-4"></div>
+        <div id="routes-unlock-hint" class="unlock-hint"></div>
+
+        <button id="back-to-map-button" class="btn btn-back mt-8">Back to Map</button>
+    </div>
+
+    <div id="event-screen">
+        <h1 class="text-3xl font-bold mb-4">Something Happened!</h1>
+        <div id="event-details"></div>
+        <button id="continue-voyage-button" class="btn btn-event mt-6">Continue Voyage</button>
+    </div>
+
+    <div id="message-box"></div>
+
+    <script>
+        // --- Game State ---
+        let gameState = {
+            captainName: "Trader", gold: 100,
+            boat: { name: "The Salty Sardine", capacity: 10, hullColor: '#a16207', sailColor: '#f1f5f9', flag: '?' },
+            cargo: {}, currentIslandIndex: 0, cargoCount: 0, tradesMade: 0, goldSpent: 0, goldEarned: 0,
+            visitedIslandIndices: new Set(), unlockedIslandIndices: new Set(), unlockedFeatures: new Set(),
+            pendingTravel: { destinationIndex: -1, eventEffects: null },
+            routesPurchased: false
+        };
+
+        // --- Game Data ---
+        const islands = [ /* ... island data ... */
+            { name: "Shellville", description: "Obsessed with shells, hates bananas.", goods: [{ name: "Shiny Shells", basePrice: 5 }, { name: "Salty Driftwood", basePrice: 8 }, { name: "Banana Peels", basePrice: 1 }, { name: "Message in a Bottle", basePrice: 15 }, { name: "Wilted Flowers", basePrice: 4 }], x: 15, y: 20 },
+            { name: "Boomboom Atoll", description: "Trades lava and rage.", goods: [{ name: "Warm Lava Rock", basePrice: 20 }, { name: "Bottled Fury", basePrice: 30 }, { name: "Obsidian Shards", basePrice: 12 }, { name: "Shiny Shells", basePrice: 10 }, { name: "Spare Cogs", basePrice: 11 }], x: 75, y: 30 },
+            { name: "Crynaria", description: "Buys tissues, sells gloom.", goods: [{ name: "Box of Tissues", basePrice: 5 }, { name: "Bottled Gloom", basePrice: 18 }, { name: "Sad Poetry Scroll", basePrice: 25 }, { name: "Wilted Flowers", basePrice: 3 }, { name: "Salty Driftwood", basePrice: 9 }], x: 25, y: 70 },
+            { name: "Partyo", description: "Throws parties, always out of confetti.", goods: [{ name: "Leftover Cake", basePrice: 7 }, { name: "Flat Soda", basePrice: 2 }, { name: "Glitter Bomb", basePrice: 40 }, { name: "Box of Tissues", basePrice: 15 }, { name: "Mysterious Wires", basePrice: 16 }], x: 65, y: 80 },
+            { name: "Gizmo Isle", description: "Full of clanks, whirs, and spare parts.", goods: [{ name: "Spare Cogs", basePrice: 9 }, { name: "Mysterious Wires", basePrice: 14 }, { name: "Slightly Used Bolt", basePrice: 4 }, { name: "Warm Lava Rock", basePrice: 25 }, { name: "Bottled Fury", basePrice: 35 }], x: 45, y: 45 },
+            { name: "Crystal Caves", description: "Sparkling gems and echoing whispers.", goods: [{ name: "Raw Crystal", basePrice: 50 }, { name: "Polished Gemstone", basePrice: 100 }, { name: "Echo Bloom", basePrice: 35 }, { name: "Spare Cogs", basePrice: 15 }, { name: "Obsidian Shards", basePrice: 18 }], x: 85, y: 60 },
+            { name: "Mount Neapolita", description: "A chilly peak with sweet secrets.", goods: [{ name: "Ice Cream Scoop", basePrice: 10 }, { name: "Frozen Syrup", basePrice: 22 }, { name: "Chilly Sprinkles", basePrice: 5 }, { name: "Bottled Gloom", basePrice: 25 }, { name: "Shiny Shells", basePrice: 8 }], x: 10, y: 50 },
+            { name: "Black Market", description: "Shady deals in murky waters.", goods: [{ name: "Mysterious Wires", basePrice: 8 }, { name: "Bottled Fury", basePrice: 15 }, { name: "Shiny Shells", basePrice: 3 }, { name: "Suspicious Package", basePrice: 70 }, { name: "Dubious Map Piece", basePrice: 120 }], x: 50, y: 15 },
+        ];
+        const fishingSpot = { name: "Quiet Fishing Hole", x: 40, y: 85 };
+        const ROUTE_GOODS = [
+            { name: "Clockwork Bird", basePrice: 60 },
+            { name: "Singing Seaweed", basePrice: 45 },
+        ];
+        let allGoodsList = islands.flatMap(i => i.goods.map(g => g.name));
+
+        const startingSpecialties = [
+            { name: "Balanced Trader", description: "A bit of everything.", items: { "Salty Driftwood": 2, "Spare Cogs": 1 }, goldBonus: 0 },
+            { name: "Shell Collector", description: "Starts with extra shells.", items: { "Shiny Shells": 5 }, goldBonus: -10 },
+            { name: "Rock Enthusiast", description: "Begins with valuable rocks.", items: { "Warm Lava Rock": 1, "Obsidian Shards": 1 }, goldBonus: -20 },
+            { name: "Party Supplier", description: "Ready to get the party started.", items: { "Leftover Cake": 3, "Flat Soda": 2 }, goldBonus: 0 },
+            { name: "Poetry Peddler", description: "Armed with words (and tissues).", items: { "Sad Poetry Scroll": 1, "Box of Tissues": 3 }, goldBonus: -15 },
+        ];
+        const boatAdjectives = ["Salty", "Rusty", "Lucky", "Wobbly", "Tiny", "Grand", "Coral", "Sunken", "Floating", "Wandering", "Pastel", "Cozy", "Sleepy"];
+        const boatNouns = ["Sardine", "Seagull", "Barnacle", "Coconut", "Pickle", "Drifter", "Trader", "Banana", "Starfish", "Whale", "Teacup", "Petal", "Button"];
+
+        // --- Unlock Conditions (Updated Requirements) ---
+        const unlockConditions = [
+            { type: 'feature', name: 'boatUpgrade', requires: { stat: 'tradesMade', value: 4 }, message: "You feel confident enough to tinker with your boat! Click your boat on the map to upgrade." },
+            { type: 'island', index: 5, requires: { stat: 'goldEarned', value: 75 }, message: "Heard whispers of sparkling caves... Crystal Caves unlocked!" },
+            { type: 'island', index: 6, requires: { stat: 'visitedIslandIndices', value: 5 }, message: "You've seen the main sights! A chilly peak appears on your map: Mount Neapolita unlocked!" },
+            { type: 'feature', name: 'shipCustomization', requires: { stat: 'goldSpent', value: 150 }, message: "You've invested a bit in the economy! Ship customization options might be available at the Shipyard." },
+            { type: 'feature', name: 'specialRoutes', requires: { stat: 'goldEarned', value: 250 }, message: "You're becoming quite the tycoon! Rumors of special routes are circulating at the Shipyard." },
+        ];
+
+        // --- Travel Events Data ---
+        const travelEvents = [ /* ... events ... */];
+        const EVENT_CHANCE = 0.35;
+
+        // --- Fishing Data ---
+        const FISHING_COST = 1; const FISH_CATCH_CHANCE = 0.5; const RARE_FISH_CHANCE_OF_CATCH = 0.25;
+        const LOW_ITEM_CATCH_CHANCE = 0.2; const JUNK_CATCH_CHANCE = 0.2;
+        const LOW_VALUE_FISHING_ITEMS = ["Banana Peels", "Flat Soda", "Wilted Flowers", "Slightly Used Bolt", "Salty Driftwood"];
+        const JUNK_ITEMS_FLAVOR = ["an Old Boot", "a clump of Seaweed", "a Rusted Can", "a Soggy Log", "someone's lost Sock"];
+        const FISH_ITEM_NAME = "Common Fish"; const RARE_FISH_ITEM_NAME = "Rare Fish";
+        const FISH_SELL_PRICE = 3; const RARE_FISH_SELL_PRICE = 10;
+
+        // --- Shipyard Costs ---
+        const HULL_COLOR_COST = 15; const SAIL_COLOR_COST = 10; const FLAG_COST = 25; const ROUTES_COST = 100;
+
+        // --- UI Elements ---
+        // (Ensure all elements are correctly grabbed)
+        const startScreenEl = document.getElementById('start-screen');
+        const captainNameInput = document.getElementById('captain-name');
+        const boatNameInput = document.getElementById('boat-name-input');
+        const randomBoatNameButton = document.getElementById('random-boat-name');
+        const startIslandSelect = document.getElementById('start-island');
+        const startSpecialtySelect = document.getElementById('start-specialty');
+        const specialtyDescEl = document.getElementById('specialty-desc');
+        const startGameButton = document.getElementById('start-game-button');
+
+        const gameScreenEl = document.getElementById('game-screen');
+        const captainNameDisplayEl = document.getElementById('captain-name-display');
+        const boatNameDisplayEl = document.getElementById('boat-name-display');
+        const goldEl = document.getElementById('player-gold');
+        const cargoCurrentEl = document.getElementById('cargo-current');
+        const cargoCapacityEl = document.getElementById('cargo-capacity');
+        const inventoryListEl = document.getElementById('inventory-list');
+        const flavorTextEl = document.getElementById('flavor-text');
+
+        const islandNameEl = document.getElementById('island-name');
+        const islandDescEl = document.getElementById('island-desc');
+        const marketItemsEl = document.getElementById('market-items');
+        const setSailButton = document.getElementById('set-sail-button');
+
+        const travelMapScreenEl = document.getElementById('travel-map-screen');
+        const mapAreaEl = document.getElementById('map-area');
+        const mapCurrentLocationEl = document.getElementById('map-current-location');
+        const mapUpgradeBoatButton = document.getElementById('map-upgrade-boat');
+        const upgradeUnlockProgressEl = document.getElementById('upgrade-unlock-progress');
+        const svgBoatTemplate = document.getElementById('svg-boat-template');
+
+        const shipyardScreenEl = document.getElementById('shipyard-screen');
+        const shipyardCapacityEl = document.getElementById('shipyard-current-capacity');
+        const upgradeCapacityButton = document.getElementById('upgrade-capacity-button');
+        const capacityUpgradeCostEl = document.getElementById('capacity-upgrade-cost');
+        const backToMapButton = document.getElementById('back-to-map-button');
+        const customizationHintEl = document.getElementById('customization-unlock-hint');
+        const routesHintEl = document.getElementById('routes-unlock-hint');
+        const shipyardCustomizationSection = document.getElementById('shipyard-customization-section');
+        const shipyardRoutesSection = document.getElementById('shipyard-routes-section');
+        const hullColorOptionsEl = document.getElementById('hull-color-options');
+        const sailColorOptionsEl = document.getElementById('sail-color-options');
+        const flagOptionsEl = document.getElementById('flag-options');
+        const hullColorCostEl = document.getElementById('hull-color-cost');
+        const sailColorCostEl = document.getElementById('sail-color-cost');
+        const flagCostEl = document.getElementById('flag-cost');
+        const buyRoutesButton = document.getElementById('buy-routes-button');
+        const routesCostEl = document.getElementById('routes-cost');
+
+
+        const eventScreenEl = document.getElementById('event-screen');
+        const eventDetailsEl = document.getElementById('event-details');
+        const continueVoyageButton = document.getElementById('continue-voyage-button');
+
+        const messageBoxEl = document.getElementById('message-box');
+
+        // --- Constants ---
+        const BASE_CAPACITY_UPGRADE_COST = 50;
+        const BLACK_MARKET_INDEX = 7;
+
+        // --- Utility Functions ---
+        function showMessage(text, duration = 3500) {
+            messageBoxEl.textContent = text; messageBoxEl.style.display = 'block';
+            if (messageBoxEl.timerId) clearTimeout(messageBoxEl.timerId);
+            messageBoxEl.timerId = setTimeout(() => { messageBoxEl.style.display = 'none'; messageBoxEl.timerId = null; }, duration);
+        }
+        function updateFlavorText(text) {
+            flavorTextEl.textContent = text; flavorTextEl.scrollTop = 0;
+        }
+        function calculatePrice(good, type = 'buy') {
+            if (good.name === FISH_ITEM_NAME) { return (type === 'sell') ? FISH_SELL_PRICE : 999; }
+            if (good.name === RARE_FISH_ITEM_NAME) { return (type === 'sell') ? RARE_FISH_SELL_PRICE : 9999; }
+
+            let price = good.basePrice; const randomFactor = (Math.random() * 0.6) + 0.7;
+            if (type === 'buy') { price *= (1 + (Math.random() * 0.2 - 0.1)); }
+            else { price *= (1 + (Math.random() * 0.2 - 0.1)); }
+            return Math.max(1, Math.round(price * randomFactor));
+        }
+        function generateRandomBoatName() {
+            const adj = boatAdjectives[Math.floor(Math.random() * boatAdjectives.length)];
+            const noun = boatNouns[Math.floor(Math.random() * boatNouns.length)];
+            if (adj && noun) { return `The ${adj} ${noun}`; }
+            else { console.error("Error generating random boat name: Invalid adjective or noun.", adj, noun); return "The Salty Sardine"; }
+        }
+
+        // --- Screen Management ---
+        function showScreen(screenId) {
+            const screens = [startScreenEl, gameScreenEl, travelMapScreenEl, shipyardScreenEl, eventScreenEl];
+            screens.forEach(screen => { screen.classList.toggle('active', screen.id === screenId); });
+        }
+
+        // --- Unlock Logic ---
+        function checkUnlocks() {
+            let newlyUnlocked = false;
+            unlockConditions.forEach(cond => {
+                let alreadyUnlocked = false;
+                if (cond.type === 'island') { alreadyUnlocked = gameState.unlockedIslandIndices.has(cond.index); }
+                else if (cond.type === 'feature') { alreadyUnlocked = gameState.unlockedFeatures.has(cond.name); }
+                if (!alreadyUnlocked) {
+                    const stat = cond.requires.stat; const requiredValue = cond.requires.value;
+                    let currentValue = (stat === 'visitedIslandIndices') ? gameState.visitedIslandIndices.size : gameState[stat];
+                    if (currentValue >= requiredValue) {
+                        if (cond.type === 'island') { gameState.unlockedIslandIndices.add(cond.index); }
+                        else if (cond.type === 'feature') { gameState.unlockedFeatures.add(cond.name); }
+                        if (cond.message) { showMessage(cond.message, 5000); }
+                        newlyUnlocked = true;
+                    }
+                }
+            });
+            if (newlyUnlocked) { updateUnlockUI(); }
+        }
+        function updateUnlockUI() {
+            const upgradeUnlocked = gameState.unlockedFeatures.has('boatUpgrade');
+            mapUpgradeBoatButton.disabled = true;
+            if (upgradeUnlocked) {
+                mapUpgradeBoatButton.classList.remove('locked'); mapUpgradeBoatButton.classList.add('unlocked-guide');
+                mapUpgradeBoatButton.textContent = 'Click Your Boat on the Map to Upgrade!'; upgradeUnlockProgressEl.textContent = '';
+            } else {
+                mapUpgradeBoatButton.classList.add('locked'); mapUpgradeBoatButton.classList.remove('unlocked-guide');
+                const requiredTrades = unlockConditions.find(c => c.name === 'boatUpgrade')?.requires.value || 0;
+                upgradeUnlockProgressEl.textContent = `(${gameState.tradesMade}/${requiredTrades} trades)`;
+                mapUpgradeBoatButton.textContent = 'Upgrade Boat '; mapUpgradeBoatButton.appendChild(upgradeUnlockProgressEl);
+            }
+            // Shipyard hints updated dynamically in displayShipyard
+        }
+
+        // --- Core Game Logic ---
+        function buyItem(itemName, price) {
+            if (gameState.gold < price) { showMessage("Not enough gold!"); return; }
+            if (gameState.cargoCount >= gameState.boat.capacity) { showMessage("Cargo hold is full!"); return; }
+            gameState.gold -= price; gameState.goldSpent += price;
+            gameState.cargo[itemName] = (gameState.cargo[itemName] || 0) + 1;
+            gameState.cargoCount++; gameState.tradesMade++;
+            updateFlavorText(`Bought 1 ${itemName} for ${price} gold.`);
+            updateUI(); checkUnlocks();
+        }
+        function sellItem(itemName, price) {
+            if (!gameState.cargo[itemName] || gameState.cargo[itemName] <= 0) { showMessage("You don't have any of that!"); return; }
+            if (price <= 0) { showMessage("They won't buy that here!"); return; }
+            gameState.gold += price; gameState.goldEarned += price;
+            gameState.cargo[itemName]--; gameState.cargoCount--;
+            if (gameState.cargo[itemName] <= 0) { delete gameState.cargo[itemName]; }
+            gameState.tradesMade++;
+            updateFlavorText(`Sold 1 ${itemName} for ${price} gold.`);
+            updateUI(); checkUnlocks();
+        }
+
+        // --- Shipyard Logic ---
+        function displayShipyard() {
+            shipyardCapacityEl.textContent = gameState.boat.capacity;
+            const upgradeCost = BASE_CAPACITY_UPGRADE_COST + (gameState.boat.capacity - 10) * 10;
+            capacityUpgradeCostEl.textContent = upgradeCost;
+            upgradeCapacityButton.disabled = gameState.gold < upgradeCost;
+
+            // Update Customization Section
+            const custUnlocked = gameState.unlockedFeatures.has('shipCustomization');
+            shipyardCustomizationSection.style.display = custUnlocked ? 'block' : 'none';
+            customizationHintEl.textContent = '';
+            if (!custUnlocked) {
+                const req = unlockConditions.find(c => c.name === 'shipCustomization')?.requires;
+                if (req) { customizationHintEl.textContent = `Unlock Customization: Spend ${req.value} gold (Current: ${gameState.goldSpent}g)`; }
+            } else {
+                hullColorCostEl.textContent = HULL_COLOR_COST;
+                sailColorCostEl.textContent = SAIL_COLOR_COST;
+                flagCostEl.textContent = FLAG_COST;
+                hullColorOptionsEl.querySelectorAll('button').forEach(btn => btn.disabled = gameState.gold < HULL_COLOR_COST);
+                sailColorOptionsEl.querySelectorAll('button').forEach(btn => btn.disabled = gameState.gold < SAIL_COLOR_COST);
+                flagOptionsEl.querySelectorAll('button').forEach(btn => btn.disabled = gameState.gold < FLAG_COST);
+            }
+
+            // Update Routes Section
+            const routesUnlocked = gameState.unlockedFeatures.has('specialRoutes');
+            const routesPurchased = gameState.routesPurchased;
+            shipyardRoutesSection.style.display = routesUnlocked ? 'block' : 'none';
+            routesHintEl.textContent = '';
+            if (!routesUnlocked) {
+                const req = unlockConditions.find(c => c.name === 'specialRoutes')?.requires;
+                if (req) { routesHintEl.textContent = `Unlock Routes Purchase: Earn ${req.value} gold (Current: ${gameState.goldEarned}g)`; }
+            } else {
+                routesCostEl.textContent = ROUTES_COST;
+                buyRoutesButton.disabled = routesPurchased || (gameState.gold < ROUTES_COST);
+                buyRoutesButton.textContent = routesPurchased ? 'Routes Known' : `Purchase Route Info (Cost: ${ROUTES_COST}g)`;
+            }
+
+            showScreen('shipyard-screen');
+        }
+        function upgradeCapacity() {
+            const upgradeCost = BASE_CAPACITY_UPGRADE_COST + (gameState.boat.capacity - 10) * 10;
+            if (gameState.gold >= upgradeCost) {
+                gameState.gold -= upgradeCost; gameState.goldSpent += upgradeCost;
+                gameState.boat.capacity += 5;
+                showMessage(`Cargo capacity increased to ${gameState.boat.capacity}!`, 3000);
+                updateUI(); displayShipyard(); checkUnlocks();
+            } else { showMessage("Not enough gold for this upgrade!", 3000); }
+        }
+        function changeBoatColor(type, color, cost) {
+            if (gameState.gold >= cost) {
+                gameState.gold -= cost; gameState.goldSpent += cost;
+                if (type === 'hull') gameState.boat.hullColor = color;
+                if (type === 'sail') gameState.boat.sailColor = color;
+                showMessage(`Boat ${type} color changed!`, 2000);
+                updateUI(); displayShipyard(); checkUnlocks();
+            } else { showMessage(`Not enough gold to change ${type} color!`, 3000); }
+        }
+        function changeBoatFlag(flag, cost) {
+            if (gameState.gold >= cost) {
+                gameState.gold -= cost; gameState.goldSpent += cost;
+                gameState.boat.flag = flag;
+                showMessage(`Flag changed to ${flag}!`, 2000);
+                updateUI(); displayShipyard(); checkUnlocks();
+            } else { showMessage(`Not enough gold to change flag!`, 3000); }
+        }
+        function purchaseRoutes() {
+            if (!gameState.routesPurchased && gameState.gold >= ROUTES_COST) {
+                gameState.gold -= ROUTES_COST; gameState.goldSpent += ROUTES_COST;
+                gameState.routesPurchased = true;
+                gameState.unlockedIslandIndices.add(BLACK_MARKET_INDEX);
+                ROUTE_GOODS.forEach(good => {
+                    islands[1].goods.push({ ...good }); islands[4].goods.push({ ...good }); islands[6].goods.push({ ...good }); // Add copies
+                });
+                allGoodsList = islands.flatMap(i => i.goods.map(g => g.name));
+                showMessage("Route info purchased! Black Market location marked on map. New goods circulating!", 4000);
+                updateUI(); displayShipyard(); checkUnlocks();
+            } else if (gameState.routesPurchased) { showMessage("You already know the routes!", 2000); }
+            else { showMessage("Not enough gold to purchase routes!", 3000); }
+        }
+
+        // --- Fishing Logic (Updated) ---
+        function goFishing() {
+            if (gameState.gold < FISHING_COST) {
+                showMessage(`Need ${FISHING_COST} gold to cast your line!`, 3000); return;
+            }
+            gameState.gold -= FISHING_COST; gameState.goldSpent += FISHING_COST;
+            updateUI(); checkUnlocks();
+
+            const roll = Math.random();
+            let message = `Spent ${FISHING_COST}g fishing... `;
+            let caughtItem = null;
+            let quantity = 1;
+
+            if (roll < FISH_CATCH_CHANCE) { // Catch a fish (Common or Rare)
+                if (Math.random() < RARE_FISH_CHANCE_OF_CATCH) {
+                    caughtItem = RARE_FISH_ITEM_NAME; message += `Wow! Hooked a shimmering ${RARE_FISH_ITEM_NAME}!`;
+                } else {
+                    caughtItem = FISH_ITEM_NAME; message += `Caught a ${FISH_ITEM_NAME}!`;
+                }
+            } else if (roll < FISH_CATCH_CHANCE + LOW_ITEM_CATCH_CHANCE) { // Catch low-value item
+                caughtItem = LOW_VALUE_FISHING_ITEMS[Math.floor(Math.random() * LOW_VALUE_FISHING_ITEMS.length)];
+                message += `Hooked a ${caughtItem}! Might be worth something?`;
+            } else if (roll < FISH_CATCH_CHANCE + LOW_ITEM_CATCH_CHANCE + JUNK_CATCH_CHANCE) { // Catch junk
+                const junk = JUNK_ITEMS_FLAVOR[Math.floor(Math.random() * JUNK_ITEMS_FLAVOR.length)];
+                message += `Caught ${junk}! Tossed it back.`;
+            } else { // Catch nothing
+                message += `Nothing seems to be biting...`;
+            }
+
+            if (caughtItem) {
+                if (gameState.cargoCount < gameState.boat.capacity) {
+                    gameState.cargo[caughtItem] = (gameState.cargo[caughtItem] || 0) + quantity;
+                    gameState.cargoCount += quantity; updateUI();
+                } else { message += ` But your hold is full! Had to throw it back.`; }
+            }
+            showMessage(message, 4000);
+        }
+
+        // --- Travel & Event Logic ---
+        function initiateTravel(destinationIndex) {
+            if (Math.random() < EVENT_CHANCE) {
+                const event = travelEvents[Math.floor(Math.random() * travelEvents.length)];
+                gameState.pendingTravel.destinationIndex = destinationIndex;
+                gameState.pendingTravel.eventEffects = event.effect ? JSON.parse(JSON.stringify(event.effect)) : null;
+                eventDetailsEl.textContent = event.message;
+                if (event.effect?.gold && event.effect.gold < 0) {
+                    const goldLoss = Math.min(gameState.gold, Math.abs(event.effect.gold));
+                    if (goldLoss > 0) { gameState.gold -= goldLoss; eventDetailsEl.textContent += ` (-${goldLoss} gold)`; }
+                    if (gameState.pendingTravel.eventEffects) delete gameState.pendingTravel.eventEffects.gold;
+                }
+                showScreen('event-screen');
+            } else { completeTravel(destinationIndex); }
+        }
+        function continueVoyage() {
+            const effects = gameState.pendingTravel.eventEffects; const destinationIndex = gameState.pendingTravel.destinationIndex;
+            if (effects) {
+                if (effects.gold && effects.gold > 0) { gameState.gold += effects.gold; showMessage(`Gained ${effects.gold} gold!`, 2000); }
+                if (effects.item) {
+                    if (gameState.cargoCount < gameState.boat.capacity) {
+                        gameState.cargo[effects.item] = (gameState.cargo[effects.item] || 0) + effects.quantity;
+                        gameState.cargoCount += effects.quantity; showMessage(`Found ${effects.quantity} ${effects.item}!`, 2000);
+                    } else { showMessage(`Found ${effects.quantity} ${effects.item}, but hold is full!`, 2000); }
+                }
+                if (effects.loseRandomItem) {
+                    let itemsInCargo = Object.keys(gameState.cargo).filter(item => gameState.cargo[item] > 0);
+                    if (itemsInCargo.length > 0) {
+                        const itemToLose = itemsInCargo[Math.floor(Math.random() * itemsInCargo.length)];
+                        const quantityToLose = Math.min(effects.loseRandomItem, gameState.cargo[itemToLose]);
+                        gameState.cargo[itemToLose] -= quantityToLose; gameState.cargoCount -= quantityToLose;
+                        if (gameState.cargo[itemToLose] <= 0) { delete gameState.cargo[itemToLose]; }
+                        showMessage(`Lost ${quantityToLose} ${itemToLose} overboard!`, 2000);
+                    } else { showMessage("Wave washed over, but hold was empty!", 2000); }
+                }
+            }
+            gameState.pendingTravel.destinationIndex = -1; gameState.pendingTravel.eventEffects = null;
+            completeTravel(destinationIndex);
+        }
+        function completeTravel(destinationIndex) {
+            gameState.currentIslandIndex = destinationIndex; gameState.visitedIslandIndices.add(destinationIndex);
+            const newIsland = islands[destinationIndex];
+            setTimeout(() => { updateFlavorText(`Arrived at ${newIsland.name}. ${newIsland.description}`); }, 50);
+            showScreen('game-screen'); updateUI(); checkUnlocks();
+        }
+
+        // --- Map Display Logic ---
+        function displayTravelMap() {
+            const currentIsland = islands[gameState.currentIslandIndex];
+            mapCurrentLocationEl.textContent = currentIsland.name;
+            mapAreaEl.innerHTML = '';
+
+            // Add Islands & Black Market
+            islands.forEach((island, index) => {
+                if (index === BLACK_MARKET_INDEX && !gameState.routesPurchased) return;
+
+                const el = document.createElement('div');
+                const isBlackMarket = index === BLACK_MARKET_INDEX;
+                el.className = isBlackMarket ? 'map-black-market' : 'map-island';
+                el.style.left = `${island.x}%`; el.style.top = `${island.y}%`;
+                el.textContent = island.name;
+
+                const isUnlocked = gameState.unlockedIslandIndices.has(index);
+                const isCurrent = index === gameState.currentIslandIndex;
+
+                if (isCurrent && !isBlackMarket) { el.classList.add('current'); }
+                else if (!isUnlocked && !isBlackMarket) { el.classList.add('locked'); el.title = "???"; }
+                else { el.title = `Travel to ${island.name}`; el.onclick = () => initiateTravel(index); }
+                mapAreaEl.appendChild(el);
+            });
+
+            // Add Fishing Spot
+            const fishingSpotEl = document.createElement('div');
+            fishingSpotEl.className = 'map-fishing-spot'; fishingSpotEl.style.left = `${fishingSpot.x}%`;
+            fishingSpotEl.style.top = `${fishingSpot.y}%`; fishingSpotEl.textContent = 'Fish?';
+            fishingSpotEl.title = `Try fishing (${FISHING_COST}g)`; fishingSpotEl.onclick = goFishing;
+            mapAreaEl.appendChild(fishingSpotEl);
+
+            // Add Boat (SVG) with current colors/flag
+            const boatContainer = document.createElement('div'); boatContainer.id = 'map-boat';
+            boatContainer.style.left = `calc(${currentIsland.x}% + 10px)`; boatContainer.style.top = `calc(${currentIsland.y}% - 35px)`;
+            boatContainer.title = "Your Boat (Click to manage)";
+            boatContainer.onclick = () => { if (gameState.unlockedFeatures.has('boatUpgrade')) { displayShipyard(); } else { const requiredTrades = unlockConditions.find(c => c.name === 'boatUpgrade')?.requires.value || 0; const tradesNeeded = requiredTrades - gameState.tradesMade; showMessage(`Need ${tradesNeeded} more trade${tradesNeeded !== 1 ? 's' : ''} to unlock upgrades!`, 3000); } };
+            const boatSVG = svgBoatTemplate.cloneNode(true);
+            boatSVG.style.display = 'block';
+            boatSVG.querySelector('.hull').style.fill = gameState.boat.hullColor;
+            boatSVG.querySelector('.mast').style.fill = gameState.boat.hullColor;
+            boatSVG.querySelector('.sail').style.fill = gameState.boat.sailColor;
+            boatSVG.querySelector('.flag').textContent = gameState.boat.flag;
+            boatContainer.appendChild(boatSVG); mapAreaEl.appendChild(boatContainer);
+
+            updateUnlockUI(); showScreen('travel-map-screen');
+        }
+
+        // --- UI Update Function ---
+        function updateUI() {
+            if (!gameScreenEl.classList.contains('active')) return;
+            const currentIsland = islands[gameState.currentIslandIndex];
+
+            // Sidebar Update
+            captainNameDisplayEl.textContent = gameState.captainName.replace('Captain ', ''); boatNameDisplayEl.textContent = gameState.boat.name; goldEl.textContent = gameState.gold; cargoCurrentEl.textContent = gameState.cargoCount; cargoCapacityEl.textContent = gameState.boat.capacity;
+
+            // Inventory
+            inventoryListEl.innerHTML = ''; let hasItems = false;
+            Object.entries(gameState.cargo).forEach(([item, quantity]) => { if (quantity > 0) { const li = document.createElement('li'); li.textContent = `${item}: ${quantity}`; inventoryListEl.appendChild(li); hasItems = true; } });
+            if (!hasItems) { inventoryListEl.innerHTML = '<li>(Empty)</li>'; }
+
+            // Main Header
+            islandNameEl.textContent = currentIsland.name; islandDescEl.textContent = currentIsland.description;
+
+            // Marketplace
+            marketItemsEl.innerHTML = '';
+            const goodsToShow = [...currentIsland.goods];
+            // Ensure caught fish/items are shown if player has them
+            [FISH_ITEM_NAME, RARE_FISH_ITEM_NAME, ...LOW_VALUE_FISHING_ITEMS].forEach(item => {
+                if (gameState.cargo[item] > 0 && !goodsToShow.some(g => g.name === item)) {
+                    const originalGood = islands.flatMap(i => i.goods).find(g => g.name === item);
+                    let basePrice = 2;
+                    if (item === FISH_ITEM_NAME) basePrice = FISH_SELL_PRICE * 2;
+                    else if (item === RARE_FISH_ITEM_NAME) basePrice = RARE_FISH_SELL_PRICE * 2;
+                    else if (originalGood) basePrice = originalGood.basePrice;
+                    goodsToShow.push({ name: item, basePrice: basePrice });
+                }
+            });
+
+            goodsToShow.forEach(good => {
+                const buyPrice = calculatePrice(good, 'buy'); const sellPrice = calculatePrice(good, 'sell');
+                const playerHasItem = gameState.cargo[good.name] > 0; const itemDiv = document.createElement('div'); itemDiv.className = 'market-item';
+                const canBuy = good.name !== FISH_ITEM_NAME && good.name !== RARE_FISH_ITEM_NAME && gameState.cargoCount < gameState.boat.capacity && gameState.gold >= buyPrice;
+                const canSell = playerHasItem && sellPrice > 0;
+
+                itemDiv.innerHTML = `
+                    <div class="font-semibold">${good.name}</div>
+                    <div class="text-sm text-pink-800">Base Value: ~${good.basePrice}g</div>
+                    <div class="flex justify-between items-center space-x-2 mt-auto pt-2">
+                        <button class="btn btn-buy flex-1" onclick="buyItem('${good.name}', ${buyPrice})" ${!canBuy ? 'disabled' : ''}> Buy (${buyPrice}g) </button>
+                        <button class="btn btn-sell flex-1" onclick="sellItem('${good.name}', ${sellPrice})" ${!canSell ? 'disabled' : ''}> Sell (${sellPrice}g) </button>
+                    </div>
+                `;
+                if (good.name === FISH_ITEM_NAME || good.name === RARE_FISH_ITEM_NAME) {
+                    const buyButton = itemDiv.querySelector('.btn-buy'); buyButton.disabled = true; buyButton.textContent = 'Buy (--g)';
+                }
+                marketItemsEl.appendChild(itemDiv);
+            });
+        }
+
+        // --- Initialization (Corrected) ---
+        function initializeStartScreen() {
+            // Clear existing options first
+            startIslandSelect.innerHTML = '';
+            startSpecialtySelect.innerHTML = '';
+
+            // Populate island select (only initial islands)
+            islands.slice(0, 5).forEach((island, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = island.name;
+                startIslandSelect.appendChild(option);
+            });
+
+            // Populate specialty select
+            startingSpecialties.forEach((specialty, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = specialty.name;
+                startSpecialtySelect.appendChild(option);
+            });
+
+            // Update description based on initial specialty selection
+            updateSpecialtyDescription();
+
+            // Add listener for specialty change
+            startSpecialtySelect.removeEventListener('change', updateSpecialtyDescription); // Prevent duplicates
+            startSpecialtySelect.addEventListener('change', updateSpecialtyDescription);
+
+            // Add listener for randomize button
+            randomBoatNameButton.removeEventListener('click', handleRandomBoatName); // Prevent duplicates
+            randomBoatNameButton.addEventListener('click', handleRandomBoatName);
+
+            // Add listener for start game button
+            startGameButton.removeEventListener('click', handleStartGame); // Prevent duplicates
+            startGameButton.addEventListener('click', handleStartGame);
+        }
+
+        // Handler for specialty description update
+        function updateSpecialtyDescription() {
+            const selectedIndex = parseInt(startSpecialtySelect.value, 10);
+            if (!isNaN(selectedIndex) && selectedIndex >= 0 && selectedIndex < startingSpecialties.length) {
+                const selectedSpecialty = startingSpecialties[selectedIndex];
+                const startingGold = 100 + selectedSpecialty.goldBonus;
+                specialtyDescEl.textContent = selectedSpecialty.description + ` (Gold: ${startingGold})`;
+            } else {
+                specialtyDescEl.textContent = ''; // Clear if selection is invalid
+            }
+        }
+
+        // Handler for randomize button click
+        function handleRandomBoatName() {
+            boatNameInput.value = generateRandomBoatName();
+        }
+
+        // Handler for start game button click
+        function handleStartGame() {
+            const rawCaptainName = captainNameInput.value.trim();
+            const boatName = boatNameInput.value.trim();
+
+            if (!rawCaptainName) { showMessage("Please enter your name!"); return; }
+            if (!boatName) { showMessage("Please name your boat!"); return; }
+
+            // Reset game state for a new game
+            gameState = {
+                captainName: `Captain ${rawCaptainName}`,
+                gold: 100, // Base gold before specialty bonus
+                boat: { name: boatName, capacity: 10, hullColor: '#a16207', sailColor: '#f1f5f9', flag: '?' },
+                cargo: {},
+                currentIslandIndex: parseInt(startIslandSelect.value),
+                cargoCount: 0,
+                tradesMade: 0, goldSpent: 0, goldEarned: 0,
+                visitedIslandIndices: new Set(),
+                unlockedIslandIndices: new Set(),
+                unlockedFeatures: new Set(),
+                pendingTravel: { destinationIndex: -1, eventEffects: null },
+                routesPurchased: false
+            };
+
+            // Apply specialty bonus/items
+            const selectedSpecialty = startingSpecialties[parseInt(startSpecialtySelect.value)];
+            // Ensure selectedSpecialty is valid before accessing properties
+            if (selectedSpecialty) {
+                gameState.gold += selectedSpecialty.goldBonus;
+                gameState.cargo = { ...selectedSpecialty.items };
+                gameState.cargoCount = Object.values(gameState.cargo).reduce((sum, qty) => sum + qty, 0);
+            } else {
+                console.error("Invalid specialty selected!");
+                // Handle error appropriately, maybe default to first specialty or show message
+            }
+
+
+            // Unlock starting islands and mark start as visited
+            for (let i = 0; i < 5; i++) { gameState.unlockedIslandIndices.add(i); }
+            gameState.visitedIslandIndices.add(gameState.currentIslandIndex);
+
+            // Cap cargo if specialty items exceed initial capacity (unlikely but safe)
+            if (gameState.cargoCount > gameState.boat.capacity) {
+                console.warn("Starting cargo exceeds capacity! Adjusting...");
+                // Logic to remove excess items might be needed here, for now just log.
+                // gameState.cargoCount = gameState.boat.capacity; // This wouldn't fix the actual items
+            }
+
+            // Start the game
+            showScreen('game-screen');
+            updateFlavorText(`Welcome aboard, ${gameState.captainName}! Let's set sail from ${islands[gameState.currentIslandIndex].name}.`);
+            updateUI();
+            checkUnlocks(); // Check initial unlocks (e.g., if specialty meets a condition)
+            updateUnlockUI();
+        }
+
+
+        // --- Event Listeners ---
+        setSailButton.addEventListener('click', displayTravelMap);
+        upgradeCapacityButton.addEventListener('click', upgradeCapacity);
+        backToMapButton.addEventListener('click', () => showScreen('travel-map-screen'));
+        continueVoyageButton.addEventListener('click', continueVoyage);
+        hullColorOptionsEl.addEventListener('click', (e) => { if (e.target.classList.contains('color-btn') && !e.target.disabled) { changeBoatColor('hull', e.target.dataset.color, HULL_COLOR_COST); } });
+        sailColorOptionsEl.addEventListener('click', (e) => { if (e.target.classList.contains('color-btn') && !e.target.disabled) { changeBoatColor('sail', e.target.dataset.color, SAIL_COLOR_COST); } });
+        flagOptionsEl.addEventListener('click', (e) => { if (e.target.classList.contains('flag-btn') && !e.target.disabled) { changeBoatFlag(e.target.dataset.flag, FLAG_COST); } });
+        buyRoutesButton.addEventListener('click', purchaseRoutes);
+
+        // --- Initial Page Load ---
+        window.onload = () => {
+            console.log("Page loaded. Initializing start screen.");
+            showScreen('start-screen');
+            initializeStartScreen(); // Call the corrected initialization function
+        };
+
+    </script>
+
+</body>
+
+</html>

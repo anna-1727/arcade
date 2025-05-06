@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Anna's Arcade</title>
     <style>
         /* General reset */
@@ -12,24 +13,27 @@
             box-sizing: border-box;
         }
 
-        /* Body setup for full viewport */
+        /* Body with background image */
         body {
-            background-color: #2c6d47; /* Hunter Green */
-            color: #f1a7b2; /* Light Pink */
+            background-image: url('https://i.pinimg.com/736x/92/8e/ba/928ebac3dba8ff51e588ebae9fb15a9f.jpg');
+            /* Replace with your image path */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            color: #f1a7b2;
+            /* Light Pink */
             font-family: 'Arial', sans-serif;
-            height: 100vh; /* Full viewport height */
-            width: 100vw;  /* Full viewport width */
-            /* overflow: hidden; Prevent scrollbars */
-            position: relative; /* Needed for absolute centering */
+            height: 100vh;
+            width: 100vw;
+            position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* Container for content */
         .container {
-            background-color: #ffffff; /* White background for the content */
-            color: #2c6d47; /* Hunter Green */
+            background-color: #ffffff;
+            color: #2c6d47;
             width: 80%;
             max-width: 900px;
             padding: 30px;
@@ -37,36 +41,31 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             text-align: center;
             margin: 50px auto;
-
-            /* position: absolute; Position relative to the body
-            top: 50%; Position from top
-            left: 50%; Position from left
-            transform: translate(-50%, -50%); Adjust position to center */
         }
 
-        /* Header styles */
         h1 {
             font-size: 3em;
-            color: #f1a7b2; /* Light Pink */
+            color: #f1a7b2;
             letter-spacing: 2px;
             text-transform: uppercase;
             margin-bottom: 10px;
+            font-family: 'Times New Roman', Times, serif;
         }
 
         h2 {
             font-size: 1.8em;
             color: #f1a7b2;
             margin-bottom: 20px;
+            font-family: 'Times New Roman', Times, serif;
         }
 
-        /* Paragraph text style */
         p {
             font-size: 1.2em;
             margin: 30px 0;
             color: #000000;
+            font-family: 'Courier New', Courier, monospace;
         }
 
-        /* Links container setup */
         .game-links {
             display: flex;
             justify-content: center;
@@ -75,7 +74,6 @@
             margin-top: 40px;
         }
 
-        /* Individual game link style */
         .game-link {
             display: inline-block;
             background-color: #f1a7b2;
@@ -87,26 +85,34 @@
             font-size: 1.5em;
             transition: background-color 0.3s ease, transform 0.3s ease;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-family:'Times New Roman', Times, serif;
         }
 
         .game-link:hover {
-            background-color: #2c6d47;
+            background-color: #1c442c;
             color: #f1a7b2;
             transform: translateY(-5px);
         }
 
-        /* Footer style */
+        /* Footer uses the old hunter green */
         .footer {
-            background-color: #4c9b6d;
-            color: #f1a7b2;
+            background-color: #1c442c;
+            /* Old background color */
+            color: #ffffff !important;
             padding: 1px 0;
             text-align: center;
             position: fixed;
             bottom: 0;
-            width: 100%; /* Ensure footer spans across the width */
+            width: 100%;
+        }
+
+        .yolo{
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
         }
     </style>
 </head>
+
 <body>
 
     <div class="container">
@@ -125,12 +131,14 @@
             <a href="llama.html" class="game-link">Llamas</a>
             <a href="boston.html" class="game-link">Boston Trivia</a>
             <a href="jeopardy.html" class="game-link">Freshman Year Jeopardy</a>
+            <a href="travel.html" class="game-link">Tiny Island Trader</a>
         </div>
     </div>
 
     <footer class="footer">
-        <p>Created by Anna! Because I am Very Bored&trade;</p>
+        <p class="yolo">Created by Anna! Because I am Very Bored&trade;</p>
     </footer>
 
 </body>
+
 </html>
