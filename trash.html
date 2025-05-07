@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treasure Trash Island</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&family=Seaweed+Script&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kalam', cursive;
+            background-color: #F0E68C;
+            /* Khaki - sandy beach */
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23D2B48C' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .title-font {
+            font-family: 'Seaweed Script', cursive;
+        }
+
+        .game-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .panel {
+            background-color: rgba(210, 180, 140, 0.8);
+            border: 3px solid #8B4513;
+            /* SaddleBrown */
+            border-radius: 15px;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .panel:hover {
+            transform: translateY(-3px);
+            box-shadow: 7px 7px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .panel-title {
+            font-family: 'Kalam', cursive;
+            font-weight: 700;
+            color: #5C4033;
+            /* Dark Brown */
+            border-bottom: 2px dashed #8B4513;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        .button-style {
+            background-color: #A0522D;
+            /* Sienna */
+            color: #FFF8DC;
+            /* Cornsilk */
+            border: 2px solid #5C4033;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-style:hover {
+            background-color: #8B4513;
+            /* SaddleBrown */
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 7px rgba(0, 0, 0, 0.3);
+        }
+
+        .button-style:active {
+            transform: translateY(1px);
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .button-style:disabled {
+            background-color: #B0A090;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .trash-item,
+        .inventory-item,
+        .crafting-slot-item,
+        .material-icon,
+        .visitor-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            background-color: #FFFACD;
+            /* LemonChiffon */
+            border: 2px solid #DEB887;
+            /* BurlyWood */
+            border-radius: 10px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 24px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+        }
+
+        .trash-item:hover,
+        .inventory-item:hover,
+        .crafting-slot-item:hover,
+        .visitor-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .material-icon {
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            margin: 2px;
+            cursor: default;
+        }
+
+        .material-icon:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .visitor-icon {
+            font-size: 36px;
+            cursor: default;
+        }
+
+
+        .tooltip {
+            visibility: hidden;
+            width: 120px;
+            background-color: #5C4033;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 0;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+
+        .trash-item:hover .tooltip,
+        .inventory-item:hover .tooltip,
+        .crafting-slot-item:hover .tooltip,
+        .material-icon:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .beach-area {
+            min-height: 200px;
+            background-color: #ADD8E6;
+            /* LightBlue */
+            background-image:
+                linear-gradient(to bottom, rgba(173, 216, 230, 0.8) 0%, rgba(240, 230, 140, 0.8) 30%, rgba(240, 230, 140, 1) 100%),
+                repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.05) 10px, rgba(255, 255, 255, 0.05) 20px);
+            padding: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-start;
+            border-radius: 10px;
+            border: 3px dashed #87CEEB;
+            /* SkyBlue */
+        }
+
+        .crafting-slots {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            justify-content: center;
+        }
+
+        .crafting-slot {
+            width: 70px;
+            height: 70px;
+            border: 2px dashed #8B4513;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        #message-box {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #6B8E23;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out, bottom 0.5s ease-in-out;
+            text-align: center;
+        }
+
+        #message-box.show {
+            opacity: 1;
+            bottom: 40px;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            60% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+
+            80% {
+                transform: scale(0.9);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .item-bounce {
+            animation: bounceIn 0.5s ease-out;
+        }
+
+        .raft-part-item {
+            border: 1px solid #8B4513;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background-color: rgba(255, 248, 220, 0.7);
+        }
+
+        .raft-part-item h4 {
+            font-weight: bold;
+            color: #5C4033;
+        }
+
+        .raft-part-item p {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .built {
+            background-color: #90EE90 !important;
+            color: #006400;
+        }
+
+        .game-over-raft {
+            background-color: #d3d3d3 !important;
+            opacity: 0.7;
+        }
+
+        .zone-item {
+            border: 1px dashed #A0522D;
+            /* Sienna */
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            background-color: rgba(255, 250, 240, 0.6);
+            /* FloralWhite, semi-transparent */
+        }
+
+        .zone-item.unlocked {
+            border-style: solid;
+            border-color: #2E8B57;
+            /* SeaGreen */
+        }
+
+        .zone-item ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .zone-item li {
+            margin-bottom: 3px;
+        }
+
+        .link-home{
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 30px;
+        }
+    </style>
+</head>
+
+<body class="bg-yellow-100">
+    <a class="link-home" href="index.html">HOME PAGE</a>
+    <div class="game-container">
+        <header class="text-center my-8">
+            <h1 class="text-6xl title-font text-green-700">Treasure Trash Island</h1>
+            <p class="text-xl text-yellow-700 mt-2">"Your goal? Build a raft to leave... OR just turn the island into
+                your trashy paradise."</p>
+            <div class="text-lg text-amber-800 mt-1">
+                <span>Day: <span id="day-counter">1</span></span> |
+                <span id="collected-today-span">Collected Today: 0/6</span>
+            </div>
+        </header>
+
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="md:col-span-2 space-y-6">
+                <div class="panel">
+                    <h2 class="panel-title text-2xl">The Ever-Shifting Shore (Beach)</h2>
+                    <div id="beach-area" class="beach-area"></div>
+                </div>
+
+                <div id="visitors-panel" class="panel">
+                    <h2 class="panel-title text-xl">Island Visitors</h2>
+                    <div id="visitor-area" class="min-h-[150px] flex flex-col items-center justify-center">
+                    </div>
+                </div>
+
+                <div id="zones-panel" class="panel">
+                    <h2 class="panel-title text-xl">Explore the Island</h2>
+                    <div id="zone-area" class="min-h-[100px]">
+                    </div>
+                </div>
+            </div>
+
+            <div class="md:col-span-1 space-y-6">
+                <div class="panel">
+                    <h2 class="panel-title text-xl">Goblin's Hoard (Inventory)</h2>
+                    <p class="text-xs text-yellow-800 mb-1">(Max 3 of each specific item type)</p>
+                    <div id="inventory-area" class="flex flex-wrap gap-2 min-h-[80px]"></div>
+                </div>
+
+                <div id="raft-panel" class="panel">
+                    <h2 class="panel-title text-xl">Raft Construction Site</h2>
+                    <div id="raft-progress-area"></div>
+                </div>
+
+                <div class="panel">
+                    <h2 class="panel-title text-xl">Goblinify Contraption</h2>
+                    <p class="text-sm text-yellow-800 mb-2">Combine two items from your hoard!</p>
+                    <div class="crafting-slots">
+                        <div id="crafting-slot-1" class="crafting-slot"></div>
+                        <div id="crafting-slot-2" class="crafting-slot"></div>
+                    </div>
+                    <button id="goblinify-button" class="button-style w-full mt-2">GOBLINIFY!</button>
+                    <div class="mt-3">
+                        <h3 class="font-semibold text-amber-900">Last Creation:</h3>
+                        <div id="crafted-item-display"
+                            class="min-h-[70px] flex items-center justify-center bg-white/40 rounded-lg p-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center my-8">
+            <button id="new-day-button" class="button-style text-lg px-8 py-4">Wait for the Morning Tide (New
+                Day)</button>
+        </footer>
+    </div>
+
+    <div id="message-box">This is a message!</div>
+
+    <script>
+        // --- GAME STATE CONSTANTS ---
+        const MAX_COLLECT_PER_DAY = 6;
+        const MAX_ITEMS_PER_TYPE_IN_INVENTORY = 3;
+        const RAFT_ESCAPE_DEADLINE_DAY = 17;
+        const GUARANTEED_UNCOMMON_SPAWNS_PER_DAY = 2;
+        const VISITOR_SPAWN_CHANCE = 0.3;
+        const VISITOR_COOLDOWN_MIN_DAYS = 2;
+        const VISITOR_COOLDOWN_MAX_DAYS = 4;
+        const GUARANTEED_ZONE_SPECIALTY_SPAWNS = 1; // Items of specialty type per unlocked zone
+
+
+        // --- GAME STATE VARIABLES ---
+        let gameState = {
+            day: 1,
+            inventory: [],
+            beachTrash: [],
+            craftingSlots: [null, null],
+            nextItemId: 0,
+            collectedThisDayCount: 0,
+            raftProgress: { HULL: false, MAST: false, SAIL: false, SNACK_STORAGE: false, SEAGULL_DETERRENT: false },
+            raftEscapeFailed: false,
+            currentVisitor: null,
+            visitorCooldown: 0,
+            unlockedZones: { SWAMP_OF_SOCKS: false, BOTTLECAP_CLIFFS: false },
+            gameWon: false,
+        };
+
+        // --- TRASH DEFINITIONS ---
+        const TRASH_TYPES = {
+            PLASTIC: { name: 'Plastic', icon: '🧴', color: 'bg-blue-200', borderColor: 'border-blue-400' },
+            METAL: { name: 'Metal', icon: '🔩', color: 'bg-gray-300', borderColor: 'border-gray-500' },
+            ORGANIC: { name: 'Organic', icon: '🍎', color: 'bg-green-200', borderColor: 'border-green-400' },
+            FABRIC: { name: 'Fabric', icon: '🧵', color: 'bg-purple-200', borderColor: 'border-purple-400' },
+            GLASS: { name: 'Glass', icon: '🍾', color: 'bg-cyan-200', borderColor: 'border-cyan-400' },
+            WOOD: { name: 'Wood', icon: '🪵', color: 'bg-yellow-300', borderColor: 'border-yellow-500' },
+            CRAFTED: { name: 'Crafted', icon: '✨', color: 'bg-yellow-200', borderColor: 'border-yellow-400' }
+        };
+
+        const POSSIBLE_TRASH_ITEMS = [
+            { baseName: 'Old Bottle', type: TRASH_TYPES.PLASTIC, icon: '🧴', description: "A crinkly plastic bottle.", rarity: 'common' },
+            { baseName: 'Rusty Can', type: TRASH_TYPES.METAL, icon: '🥫', description: "A tetanus risk, but shiny!", rarity: 'common' },
+            { baseName: 'Apple Core', type: TRASH_TYPES.ORGANIC, icon: '🍎', description: "Someone's leftover snack.", rarity: 'common' },
+            { baseName: 'Driftwood Piece', type: TRASH_TYPES.WOOD, icon: '🪵', description: "Smooth and worn by the sea.", rarity: 'common' },
+            { baseName: 'Tattered Rag', type: TRASH_TYPES.FABRIC, icon: '🧣', description: "A colorful, holey cloth.", rarity: 'common' },
+            { baseName: 'Sea Glass Shard', type: TRASH_TYPES.GLASS, icon: '💎', description: "A smooth, frosty piece of glass.", rarity: 'common' },
+            { baseName: 'Bent Spoon', type: TRASH_TYPES.METAL, icon: '🥄', description: "Slightly sad, but metallic!", rarity: 'common' },
+            { baseName: 'Bottle Cap', type: TRASH_TYPES.METAL, icon: '🔘', description: "A tiny metal disc.", rarity: 'common' },
+            { baseName: 'Plastic Bag', type: TRASH_TYPES.PLASTIC, icon: '🛍️', description: "Floats like a jellyfish.", rarity: 'common' },
+            { baseName: 'Banana Peel', type: TRASH_TYPES.ORGANIC, icon: '🍌', description: "Slippery when fresh.", rarity: 'common' },
+            { baseName: 'Old Sock', type: TRASH_TYPES.FABRIC, icon: '🧦', description: "Where's its other half?", rarity: 'common' },
+            { baseName: 'Broken Mug Shard', type: TRASH_TYPES.GLASS, icon: '🏺', description: "Part of a forgotten story.", rarity: 'common' },
+            { baseName: 'Empty Barrel', type: TRASH_TYPES.PLASTIC, icon: '🛢️', description: "A hollow barrel. Floats!", rarity: 'uncommon' },
+            { baseName: 'Sturdy Plank', type: TRASH_TYPES.WOOD, icon: '🧱', description: "A solid piece of wood.", rarity: 'uncommon' }, // Also a trade item
+            { baseName: 'Large Tarp', type: TRASH_TYPES.FABRIC, icon: '⛺', description: "A big sheet, waterproof-ish.", rarity: 'uncommon' },
+            { baseName: 'Strong Rope', type: TRASH_TYPES.FABRIC, icon: '🧶', description: "Good for tying things.", rarity: 'uncommon' }
+        ];
+        const COMMON_TRASH_ITEMS = POSSIBLE_TRASH_ITEMS.filter(item => item.rarity === 'common');
+        const UNCOMMON_TRASH_ITEMS = POSSIBLE_TRASH_ITEMS.filter(item => item.rarity === 'uncommon');
+
+        // --- CRAFTING RECIPES ---
+        const RECIPES = [
+            { ingredients: [TRASH_TYPES.PLASTIC.name, TRASH_TYPES.METAL.name], result: { name: "Ducky Scepter", icon: '🔱', description: "A regal scepter." } },
+            { ingredients: [TRASH_TYPES.WOOD.name, TRASH_TYPES.FABRIC.name], result: { name: "Cozy Log Seat", icon: '🛋️', description: "Surprisingly comfy." } },
+            { ingredients: [TRASH_TYPES.GLASS.name, TRASH_TYPES.ORGANIC.name], result: { name: "Terrarium Globe", icon: '🌍', description: "A tiny world." } },
+            { ingredients: [TRASH_TYPES.METAL.name, TRASH_TYPES.METAL.name], result: { name: "Clanky Wind Chime", icon: '🎶', description: "Makes a... unique sound." } },
+            { ingredients: [TRASH_TYPES.PLASTIC.name, TRASH_TYPES.PLASTIC.name], result: { name: "Plastic Flowerpot", icon: '🪴', description: "For a hardy weed." } },
+            { ingredients: [TRASH_TYPES.FABRIC.name, TRASH_TYPES.FABRIC.name], result: { name: "Patchwork Quilt Scrap", icon: '🏳️', description: "A start to something bigger!" } }
+        ];
+        const CLANKY_WIND_CHIME_DEF = { baseName: "Clanky Wind Chime", type: TRASH_TYPES.CRAFTED, icon: '🎶', description: "A Goblin-made wind chime." };
+
+        // --- RAFT PART DEFINITIONS ---
+        const RAFT_PARTS = {
+            HULL: { name: "Raft Hull", materials: [{ baseName: 'Driftwood Piece', quantity: 3, icon: '🪵' }, { baseName: 'Empty Barrel', quantity: 2, icon: '🛢️' }], description: "The main body!" },
+            MAST: { name: "Makeshift Mast", materials: [{ baseName: 'Sturdy Plank', quantity: 2, icon: '🧱' }, { baseName: 'Strong Rope', quantity: 1, icon: '🧶' }], description: "To catch the wind." },
+            SAIL: { name: "Patchwork Sail", materials: [{ baseName: 'Large Tarp', quantity: 1, icon: '⛺' }, { baseName: 'Tattered Rag', quantity: 3, icon: '🧣' }], description: "Colorful hope." },
+            SNACK_STORAGE: { name: "Goblin Snack Storage", materials: [{ baseName: 'Rusty Can', quantity: 2, icon: '🥫' }, { baseName: 'Plastic Bag', quantity: 3, icon: '🛍️' }], description: "For munchies." },
+            SEAGULL_DETERRENT: { name: "Seagull Deterrent System", materials: [{ baseName: CLANKY_WIND_CHIME_DEF.baseName, quantity: 1, icon: CLANKY_WIND_CHIME_DEF.icon }, { baseName: 'Sea Glass Shard', quantity: 1, icon: '💎' }], description: "Shoo, birds!" }
+        };
+
+        // --- VISITOR DEFINITIONS ---
+        const VISITOR_TYPES = [
+            {
+                id: 'CRAB_MERCHANT', name: "Crabby Carl", icon: '🦀',
+                greeting: "Psst! Got some rare shinies for trade, if you've got the junk...",
+                interaction: { type: 'trade', wants: [{ baseName: 'Bottle Cap', quantity: 3, icon: '🔘' }], gives: { baseName: 'Sturdy Plank', quantity: 1, icon: '🧱' } }
+            },
+            {
+                id: 'SEAGULL_THIEF', name: "Slick Rick", icon: '🐦',
+                greeting: "Squawk! What's that you got there? Shiny!",
+                interaction: { type: 'demand', itemToSteal: 'random' }
+            },
+            {
+                id: 'JUNK_FAIRY', name: "Fiona the Junk Fairy", icon: '🧚',
+                greeting: "Blessings upon your trash! May your bins overflow!",
+                interaction: { type: 'gift', itemToGive: 'random_uncommon' }
+            }
+        ];
+
+        // --- ZONE DEFINITIONS ---
+        const ZONE_DEFINITIONS = {
+            SWAMP_OF_SOCKS: {
+                id: 'SWAMP_OF_SOCKS', name: "Swamp of Lost Socks", icon: '🧦',
+                description: "A murky place where lost laundry congregates. Specializes in Fabric.",
+                unlockCost: [{ baseName: 'Old Sock', quantity: 3, icon: '🧦' }],
+                specialtyTrashType: TRASH_TYPES.FABRIC.name,
+                isUnlocked: () => gameState.unlockedZones.SWAMP_OF_SOCKS
+            },
+            BOTTLECAP_CLIFFS: {
+                id: 'BOTTLECAP_CLIFFS', name: "Bottlecap Cliffs", icon: '⛰️',
+                description: "Steep cliffs, surprisingly glittery with bottlecaps. Specializes in Metal.",
+                unlockCost: [{ baseName: 'Bottle Cap', quantity: 3, icon: '🔘' }], // UPDATED from 5 to 3
+                specialtyTrashType: TRASH_TYPES.METAL.name,
+                isUnlocked: () => gameState.unlockedZones.BOTTLECAP_CLIFFS
+            }
+        };
+
+
+        // --- DOM ELEMENTS ---
+        const beachArea = document.getElementById('beach-area');
+        const inventoryArea = document.getElementById('inventory-area');
+        const dayCounter = document.getElementById('day-counter');
+        const collectedTodaySpan = document.getElementById('collected-today-span');
+        const newDayButton = document.getElementById('new-day-button');
+        const goblinifyButton = document.getElementById('goblinify-button');
+        const craftingSlot1 = document.getElementById('crafting-slot-1');
+        const craftingSlot2 = document.getElementById('crafting-slot-2');
+        const craftedItemDisplay = document.getElementById('crafted-item-display');
+        const raftProgressArea = document.getElementById('raft-progress-area');
+        const visitorArea = document.getElementById('visitor-area');
+        const zoneArea = document.getElementById('zone-area');
+        const messageBox = document.getElementById('message-box');
+
+        // --- UI UPDATE FUNCTIONS ---
+        function updateCollectedTodayDisplay() { collectedTodaySpan.textContent = `Collected Today: ${gameState.collectedThisDayCount}/${MAX_COLLECT_PER_DAY}`; }
+
+        function showMessage(text, type = 'info') {
+            messageBox.textContent = text;
+            messageBox.className = 'show';
+            if (type === 'success') messageBox.style.backgroundColor = '#2E8B57';
+            else if (type === 'error') messageBox.style.backgroundColor = '#DC143C';
+            else if (type === 'info') messageBox.style.backgroundColor = '#6B8E23';
+            else if (type === 'warning') messageBox.style.backgroundColor = '#FF8C00';
+            setTimeout(() => { messageBox.className = messageBox.className.replace('show', ''); }, 3500);
+        }
+
+        // --- ITEM ELEMENT CREATION ---
+        function createItemElement(item, isInventoryItem = false, isCraftingSlotItem = false) {
+            const itemEl = document.createElement('div');
+            itemEl.classList.add('trash-item', 'item-bounce');
+            if (isInventoryItem) itemEl.classList.add('inventory-item');
+            if (isCraftingSlotItem) itemEl.classList.add('crafting-slot-item');
+
+            const displayType = item.type || TRASH_TYPES.CRAFTED;
+            itemEl.style.backgroundColor = displayType.color;
+            itemEl.style.borderColor = displayType.borderColor;
+            itemEl.textContent = item.icon;
+            itemEl.dataset.itemId = item.id;
+
+            const tooltip = document.createElement('span');
+            tooltip.classList.add('tooltip');
+            tooltip.textContent = `${item.name || item.baseName} (${displayType.name}): ${item.description}`;
+            itemEl.appendChild(tooltip);
+
+            if (!isCraftingSlotItem) {
+                itemEl.onclick = () => {
+                    if (isInventoryItem) handleInventoryItemClick(item.id);
+                    else collectTrash(item.id);
+                };
+            }
+            return itemEl;
+        }
+
+        // --- RENDERING FUNCTIONS ---
+        function renderBeach() {
+            beachArea.innerHTML = '';
+            gameState.beachTrash.forEach(item => beachArea.appendChild(createItemElement(item)));
+        }
+        function renderInventory() {
+            inventoryArea.innerHTML = '';
+            gameState.inventory.forEach(item => inventoryArea.appendChild(createItemElement(item, true)));
+        }
+        function renderCraftingSlots() {
+            craftingSlot1.innerHTML = '';
+            craftingSlot2.innerHTML = '';
+            if (gameState.craftingSlots[0]) craftingSlot1.appendChild(createItemElement(gameState.craftingSlots[0], false, true));
+            if (gameState.craftingSlots[1]) craftingSlot2.appendChild(createItemElement(gameState.craftingSlots[1], false, true));
+        }
+
+        function renderRaftProgress() {
+            raftProgressArea.innerHTML = '';
+            let allPartsActuallyBuilt = true;
+            for (const partKey in RAFT_PARTS) { if (!gameState.raftProgress[partKey]) { allPartsActuallyBuilt = false; break; } }
+
+            if (gameState.gameWon) {
+                const winMessage = document.createElement('p');
+                winMessage.textContent = "YOU'VE SAILED AWAY TO FREEDOM! (or more trash)";
+                winMessage.classList.add('text-green-700', 'font-bold', 'my-4', 'text-center', 'text-xl');
+                raftProgressArea.appendChild(winMessage);
+                return;
+            }
+
+            if (gameState.raftEscapeFailed && !allPartsActuallyBuilt) {
+                const failMessage = document.createElement('p');
+                failMessage.textContent = "The tides have turned! Escape is no longer possible. Embrace your trashy destiny!";
+                failMessage.classList.add('text-red-700', 'font-bold', 'my-4', 'text-center', 'text-md');
+                raftProgressArea.appendChild(failMessage);
+            }
+
+            for (const partKey in RAFT_PARTS) {
+                const part = RAFT_PARTS[partKey];
+                const partDiv = document.createElement('div');
+                partDiv.classList.add('raft-part-item');
+                if (gameState.raftEscapeFailed && !gameState.raftProgress[partKey]) { partDiv.classList.add('game-over-raft'); }
+
+                const title = document.createElement('h4'); title.textContent = part.name; partDiv.appendChild(title);
+                const description = document.createElement('p'); description.textContent = part.description; partDiv.appendChild(description);
+
+                if (gameState.raftProgress[partKey]) {
+                    partDiv.classList.add('built');
+                    const status = document.createElement('p'); status.textContent = "Status: BUILT! ✔️"; status.style.fontWeight = 'bold'; partDiv.appendChild(status);
+                } else {
+                    const materialsList = document.createElement('div');
+                    materialsList.innerHTML = '<p class="text-sm font-semibold">Materials Needed:</p>';
+                    const ul = document.createElement('ul'); ul.classList.add('list-disc', 'list-inside', 'text-sm');
+                    part.materials.forEach(mat => {
+                        const li = document.createElement('li');
+                        const currentAmount = gameState.inventory.filter(invItem => invItem.baseName === mat.baseName).length;
+                        let itemDef = POSSIBLE_TRASH_ITEMS.find(i => i.baseName === mat.baseName) || (mat.baseName === CLANKY_WIND_CHIME_DEF.baseName ? CLANKY_WIND_CHIME_DEF : null);
+                        const itemColor = itemDef ? itemDef.type.color : TRASH_TYPES.CRAFTED.color;
+                        const itemBorderColor = itemDef ? itemDef.type.borderColor : TRASH_TYPES.CRAFTED.borderColor;
+                        li.innerHTML = `<span class="material-icon" style="background-color:${itemColor}; border-color:${itemBorderColor};">${mat.icon}</span> ${mat.baseName} x${mat.quantity} (Have: ${currentAmount})`;
+                        if (currentAmount < mat.quantity) li.style.color = 'red';
+                        ul.appendChild(li);
+                    });
+                    materialsList.appendChild(ul); partDiv.appendChild(materialsList);
+                    const buildButton = document.createElement('button');
+                    buildButton.textContent = `Build ${part.name}`;
+                    buildButton.classList.add('button-style', 'mt-2', 'text-sm', 'w-full');
+                    if (gameState.raftEscapeFailed || gameState.gameWon) buildButton.disabled = true;
+                    buildButton.onclick = () => buildRaftPart(partKey);
+                    partDiv.appendChild(buildButton);
+                }
+                raftProgressArea.appendChild(partDiv);
+            }
+
+            if (allPartsActuallyBuilt && !gameState.raftEscapeFailed && !gameState.gameWon) {
+                const sailButton = document.createElement('button');
+                sailButton.textContent = "⛵ SAIL AWAY! ⛵";
+                sailButton.classList.add('button-style', 'w-full', 'mt-4', 'py-3', 'text-lg', 'bg-blue-500', 'hover:bg-blue-700');
+                sailButton.onclick = () => {
+                    gameState.gameWon = true;
+                    showMessage("With a mighty heave, your magnificent trash raft hits the water! You sail off into the sunset... You're FREE!", "success");
+                    updateAllDisplays();
+                };
+                raftProgressArea.appendChild(sailButton);
+            }
+        }
+
+        function renderVisitors() {
+            visitorArea.innerHTML = '';
+            if (gameState.currentVisitor) {
+                const visitor = gameState.currentVisitor;
+                const visitorDiv = document.createElement('div');
+                visitorDiv.classList.add('text-center', 'p-2');
+
+                const iconEl = document.createElement('div'); iconEl.classList.add('visitor-icon', 'mb-2'); iconEl.textContent = visitor.icon; visitorDiv.appendChild(iconEl);
+                const nameEl = document.createElement('h4'); nameEl.classList.add('font-semibold', 'text-lg', 'text-amber-900'); nameEl.textContent = visitor.name; visitorDiv.appendChild(nameEl);
+                const greetingEl = document.createElement('p'); greetingEl.classList.add('text-sm', 'text-yellow-800', 'italic'); greetingEl.textContent = `"${visitor.greeting}"`; visitorDiv.appendChild(greetingEl);
+
+                const interactButton = document.createElement('button');
+                interactButton.classList.add('button-style', 'text-sm', 'mt-2', 'px-4', 'py-2');
+
+                if (visitor.interaction.type === 'trade') interactButton.textContent = `Trade with ${visitor.name.split(' ')[0]}`;
+                else if (visitor.interaction.type === 'demand') interactButton.textContent = `Oh no, it's ${visitor.name.split(' ')[0]}!`;
+                else if (visitor.interaction.type === 'gift') interactButton.textContent = `Accept Gift`;
+                else interactButton.textContent = "Interact"; // Fallback
+
+                interactButton.onclick = () => handleVisitorInteraction();
+                visitorDiv.appendChild(interactButton);
+                visitorArea.appendChild(visitorDiv);
+            } else {
+                visitorArea.innerHTML = '<p class="text-center text-gray-500 italic">The island feels quiet today... no strange visitors in sight.</p>';
+            }
+        }
+
+        function renderZones() {
+            zoneArea.innerHTML = '';
+            for (const zoneId in ZONE_DEFINITIONS) {
+                const zone = ZONE_DEFINITIONS[zoneId];
+                const zoneDiv = document.createElement('div');
+                zoneDiv.classList.add('zone-item', 'p-3');
+                if (zone.isUnlocked()) zoneDiv.classList.add('unlocked');
+
+                const nameEl = document.createElement('h4'); nameEl.classList.add('font-bold', 'text-md', 'text-amber-900'); nameEl.textContent = `${zone.icon} ${zone.name}`; zoneDiv.appendChild(nameEl);
+                const descEl = document.createElement('p'); descEl.classList.add('text-sm', 'text-yellow-800'); descEl.textContent = zone.description; zoneDiv.appendChild(descEl);
+
+                if (zone.isUnlocked()) {
+                    const statusEl = document.createElement('p'); statusEl.classList.add('text-xs', 'font-semibold', 'text-green-700'); statusEl.textContent = "Status: Explored!"; zoneDiv.appendChild(statusEl);
+                } else {
+                    const materialsList = document.createElement('div');
+                    materialsList.innerHTML = '<p class="text-xs font-semibold mt-1">Unlock Cost:</p>';
+                    const ul = document.createElement('ul'); ul.classList.add('text-xs');
+                    let canUnlock = true;
+                    zone.unlockCost.forEach(cost => {
+                        const li = document.createElement('li');
+                        const currentAmount = gameState.inventory.filter(invItem => invItem.baseName === cost.baseName).length;
+                        li.innerHTML = `<span class="material-icon !w-[20px] !h-[20px] !text-xs" style="background-color:${POSSIBLE_TRASH_ITEMS.find(i => i.baseName === cost.baseName)?.type.color}; border-color:${POSSIBLE_TRASH_ITEMS.find(i => i.baseName === cost.baseName)?.type.borderColor};">${cost.icon}</span> ${cost.baseName} x${cost.quantity} (Have: ${currentAmount})`;
+                        if (currentAmount < cost.quantity) {
+                            li.style.color = 'red';
+                            canUnlock = false;
+                        }
+                        ul.appendChild(li);
+                    });
+                    materialsList.appendChild(ul); zoneDiv.appendChild(materialsList);
+
+                    const unlockButton = document.createElement('button');
+                    unlockButton.textContent = `Unlock ${zone.name}`;
+                    unlockButton.classList.add('button-style', 'text-xs', 'mt-1', 'w-full');
+                    unlockButton.disabled = !canUnlock || gameState.gameWon;
+                    unlockButton.onclick = () => unlockZone(zone.id);
+                    zoneDiv.appendChild(unlockButton);
+                }
+                zoneArea.appendChild(zoneDiv);
+            }
+        }
+
+
+        // --- CORE GAME LOGIC ---
+        function spawnTrash() {
+            gameState.beachTrash = [];
+            const numberOfItemsToSpawn = Math.floor(Math.random() * 3) + 5; // 5 to 7 items
+            let itemsSpawned = 0;
+
+            // Spawn guaranteed uncommon items (for raft parts)
+            for (let i = 0; i < GUARANTEED_UNCOMMON_SPAWNS_PER_DAY && itemsSpawned < numberOfItemsToSpawn; i++) {
+                if (UNCOMMON_TRASH_ITEMS.length > 0) {
+                    const randomUncommonBase = UNCOMMON_TRASH_ITEMS[Math.floor(Math.random() * UNCOMMON_TRASH_ITEMS.length)];
+                    gameState.beachTrash.push({ ...randomUncommonBase, id: gameState.nextItemId++, name: randomUncommonBase.baseName });
+                    itemsSpawned++;
+                } else { break; }
+            }
+
+            // Spawn items based on unlocked zone specialties
+            for (const zoneId in gameState.unlockedZones) {
+                if (gameState.unlockedZones[zoneId]) {
+                    const zoneDef = ZONE_DEFINITIONS[zoneId];
+                    const specialtyItems = POSSIBLE_TRASH_ITEMS.filter(item => item.type.name === zoneDef.specialtyTrashType);
+                    for (let i = 0; i < GUARANTEED_ZONE_SPECIALTY_SPAWNS && itemsSpawned < numberOfItemsToSpawn; i++) {
+                        if (specialtyItems.length > 0) {
+                            const specialtyItemBase = specialtyItems[Math.floor(Math.random() * specialtyItems.length)];
+                            gameState.beachTrash.push({ ...specialtyItemBase, id: gameState.nextItemId++, name: specialtyItemBase.baseName });
+                            itemsSpawned++;
+                        }
+                    }
+                }
+            }
+
+            // Spawn remaining items as common trash
+            while (itemsSpawned < numberOfItemsToSpawn) {
+                if (COMMON_TRASH_ITEMS.length > 0) {
+                    const randomCommonBase = COMMON_TRASH_ITEMS[Math.floor(Math.random() * COMMON_TRASH_ITEMS.length)];
+                    gameState.beachTrash.push({ ...randomCommonBase, id: gameState.nextItemId++, name: randomCommonBase.baseName });
+                    itemsSpawned++;
+                } else { break; }
+            }
+            for (let i = gameState.beachTrash.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [gameState.beachTrash[i], gameState.beachTrash[j]] = [gameState.beachTrash[j], gameState.beachTrash[i]];
+            }
+            renderBeach();
+        }
+
+        function spawnVisitor() {
+            if (gameState.currentVisitor || gameState.gameWon) return;
+            if (gameState.visitorCooldown > 0) { gameState.visitorCooldown--; return; }
+            if (Math.random() < VISITOR_SPAWN_CHANCE) {
+                gameState.currentVisitor = VISITOR_TYPES[Math.floor(Math.random() * VISITOR_TYPES.length)];
+                showMessage(`${gameState.currentVisitor.name} has arrived on the island!`, 'info');
+                gameState.visitorCooldown = Math.floor(Math.random() * (VISITOR_COOLDOWN_MAX_DAYS - VISITOR_COOLDOWN_MIN_DAYS + 1)) + VISITOR_COOLDOWN_MIN_DAYS;
+            }
+        }
+
+        function handleVisitorInteraction() {
+            if (!gameState.currentVisitor || gameState.gameWon) return;
+            const visitor = gameState.currentVisitor;
+            const interaction = visitor.interaction;
+
+            if (interaction.type === 'trade') {
+                let canAfford = true;
+                const itemsToConsume = []; // Store specific item instances for removal
+                interaction.wants.forEach(wanted => {
+                    const ownedAmount = gameState.inventory.filter(item => item.baseName === wanted.baseName).length;
+                    if (ownedAmount < wanted.quantity) canAfford = false;
+                    else itemsToConsume.push(...gameState.inventory.filter(item => item.baseName === wanted.baseName).slice(0, wanted.quantity));
+                });
+
+                if (canAfford) {
+                    // Consume 'wants' items
+                    itemsToConsume.forEach(itemInstance => {
+                        const index = gameState.inventory.findIndex(invItem => invItem.id === itemInstance.id);
+                        if (index > -1) gameState.inventory.splice(index, 1);
+                    });
+                    // Give 'gives' item
+                    const givenItemDef = POSSIBLE_TRASH_ITEMS.find(item => item.baseName === interaction.gives.baseName);
+                    if (givenItemDef) {
+                        const countInInventory = gameState.inventory.filter(invItem => invItem.baseName === givenItemDef.baseName).length;
+                        if (countInInventory < MAX_ITEMS_PER_TYPE_IN_INVENTORY) {
+                            gameState.inventory.push({ ...givenItemDef, id: gameState.nextItemId++, name: givenItemDef.baseName });
+                            showMessage(`Traded with ${visitor.name}! You got a ${interaction.gives.baseName}.`, 'success');
+                        } else {
+                            showMessage(`Traded with ${visitor.name}, but your hoard is full of ${interaction.gives.baseName}s! The item was lost.`, 'warning');
+                        }
+                    }
+                } else {
+                    showMessage(`${visitor.name} scoffs. "You don't have what I need, gremlin!"`, 'error');
+                }
+            } else if (interaction.type === 'demand') {
+                if (gameState.inventory.length > 0) {
+                    const stolenItemIndex = Math.floor(Math.random() * gameState.inventory.length);
+                    const stolenItem = gameState.inventory.splice(stolenItemIndex, 1)[0];
+                    showMessage(`${visitor.name} snatched your ${stolenItem.name || stolenItem.baseName}! The fiend!`, 'warning');
+                } else {
+                    showMessage(`${visitor.name} looks disappointed. "No shinies to steal? Pathetic!"`, 'info');
+                }
+            } else if (interaction.type === 'gift') {
+                if (UNCOMMON_TRASH_ITEMS.length > 0) {
+                    const giftItemBase = UNCOMMON_TRASH_ITEMS[Math.floor(Math.random() * UNCOMMON_TRASH_ITEMS.length)];
+                    const countInInventory = gameState.inventory.filter(invItem => invItem.baseName === giftItemBase.baseName).length;
+                    if (countInInventory < MAX_ITEMS_PER_TYPE_IN_INVENTORY) {
+                        gameState.inventory.push({ ...giftItemBase, id: gameState.nextItemId++, name: giftItemBase.baseName });
+                        showMessage(`${visitor.name} bestowed upon you a ${giftItemBase.baseName}! How kind?`, 'success');
+                    } else {
+                        showMessage(`${visitor.name} tried to give you a ${giftItemBase.baseName}, but your hoard is too full!`, 'info');
+                    }
+                }
+            }
+            gameState.currentVisitor = null; // Visitor leaves after interaction
+            updateAllDisplays();
+        }
+
+        function unlockZone(zoneIdToUnlock) {
+            if (gameState.gameWon) return;
+            const zone = ZONE_DEFINITIONS[zoneIdToUnlock];
+            if (!zone || zone.isUnlocked()) return;
+
+            let canAfford = true;
+            const materialsToConsume = [];
+            zone.unlockCost.forEach(cost => {
+                const ownedAmount = gameState.inventory.filter(item => item.baseName === cost.baseName).length;
+                if (ownedAmount < cost.quantity) canAfford = false;
+                else materialsToConsume.push(...gameState.inventory.filter(item => item.baseName === cost.baseName).slice(0, cost.quantity));
+            });
+
+            if (canAfford) {
+                materialsToConsume.forEach(itemInstance => {
+                    const index = gameState.inventory.findIndex(invItem => invItem.id === itemInstance.id);
+                    if (index > -1) gameState.inventory.splice(index, 1);
+                });
+                gameState.unlockedZones[zoneIdToUnlock] = true;
+                showMessage(`You've unlocked the ${zone.name}! New trash may wash ashore...`, 'success');
+                updateAllDisplays();
+            } else {
+                showMessage(`You don't have enough to unlock the ${zone.name}.`, 'error');
+            }
+        }
+
+
+        function collectTrash(itemId) {
+            if (gameState.gameWon) return;
+            if (gameState.collectedThisDayCount >= MAX_COLLECT_PER_DAY) { showMessage(`You can only collect ${MAX_COLLECT_PER_DAY} items today!`, "error"); return; }
+            const itemIndex = gameState.beachTrash.findIndex(item => item.id === itemId);
+            if (itemIndex === -1) return;
+            const itemToCollect = gameState.beachTrash[itemIndex];
+            const countInInventory = gameState.inventory.filter(invItem => invItem.baseName === itemToCollect.baseName).length;
+            if (countInInventory >= MAX_ITEMS_PER_TYPE_IN_INVENTORY) { showMessage(`Your hoard is full of ${itemToCollect.baseName}s! (Max ${MAX_ITEMS_PER_TYPE_IN_INVENTORY})`, "error"); return; }
+            const [collectedItem] = gameState.beachTrash.splice(itemIndex, 1);
+            gameState.inventory.push(collectedItem);
+            gameState.collectedThisDayCount++;
+            updateAllDisplays();
+            showMessage(`Collected ${collectedItem.name || collectedItem.baseName}!`, 'success');
+        }
+
+        function handleInventoryItemClick(itemId) {
+            if (gameState.gameWon) return;
+            const item = gameState.inventory.find(invItem => invItem.id === itemId);
+            if (!item) return;
+            if (!gameState.craftingSlots[0]) gameState.craftingSlots[0] = item;
+            else if (!gameState.craftingSlots[1]) {
+                if (gameState.craftingSlots[0].id === item.id) { showMessage("Cannot use the exact same item instance twice.", "error"); return; }
+                gameState.craftingSlots[1] = item;
+            } else { showMessage("Crafting slots are full.", "info"); return; }
+            renderCraftingSlots();
+        }
+
+        function clearCraftingSlot(slotIndex) {
+            if (gameState.craftingSlots[slotIndex]) {
+                const item = gameState.craftingSlots[slotIndex];
+                gameState.craftingSlots[slotIndex] = null;
+                renderCraftingSlots();
+                showMessage(`${item.name || item.baseName} returned from crafting.`, 'info');
+            }
+        }
+
+        function goblinify() {
+            if (gameState.gameWon) { showMessage("You're too busy enjoying freedom to Goblinify!", "info"); return; }
+            if (!gameState.craftingSlots[0] || !gameState.craftingSlots[1]) { showMessage("Need two items to Goblinify!", "error"); return; }
+            const item1Type = gameState.craftingSlots[0].type.name;
+            const item2Type = gameState.craftingSlots[1].type.name;
+            const item1Id = gameState.craftingSlots[0].id;
+            const item2Id = gameState.craftingSlots[1].id;
+            let craftedItemData = null;
+            for (const recipe of RECIPES) {
+                if ((recipe.ingredients[0] === item1Type && recipe.ingredients[1] === item2Type) || (recipe.ingredients[0] === item2Type && recipe.ingredients[1] === item1Type)) {
+                    craftedItemData = { ...recipe.result, baseName: recipe.result.name, id: gameState.nextItemId++, type: TRASH_TYPES.CRAFTED };
+                    break;
+                }
+            }
+            if (craftedItemData) {
+                const countCraftedInInventory = gameState.inventory.filter(invItem => invItem.baseName === craftedItemData.baseName).length;
+                if (countCraftedInInventory >= MAX_ITEMS_PER_TYPE_IN_INVENTORY) { showMessage(`Your hoard can't hold another ${craftedItemData.name}! Make space.`, "error"); return; }
+                gameState.inventory = gameState.inventory.filter(item => item.id !== item1Id && item.id !== item2Id);
+                gameState.inventory.push(craftedItemData);
+                craftedItemDisplay.innerHTML = ''; craftedItemDisplay.appendChild(createItemElement(craftedItemData, true));
+                showMessage(`Successfully Goblinified a ${craftedItemData.name}!`, 'success');
+            } else {
+                craftedItemDisplay.innerHTML = '<p class="text-red-600 p-2">Hmm... that didn\'t work. Just more junk.</p>';
+                showMessage("Those items don't Goblinify together...", "error");
+            }
+            gameState.craftingSlots = [null, null];
+            updateAllDisplays();
+        }
+
+        function buildRaftPart(partKey) {
+            if (gameState.gameWon) { showMessage("Your raft is already perfect!", "info"); return; }
+            if (gameState.raftEscapeFailed) { showMessage("The time for raft building has passed.", "warning"); return; }
+            const partDefinition = RAFT_PARTS[partKey];
+            if (!partDefinition || gameState.raftProgress[partKey]) { showMessage("This part is already built or doesn't exist!", "info"); return; }
+            let canBuild = true;
+            const materialsToConsumeInstances = [];
+            for (const requiredMat of partDefinition.materials) {
+                const itemsInInventory = gameState.inventory.filter(invItem => invItem.baseName === requiredMat.baseName);
+                if (itemsInInventory.length < requiredMat.quantity) { canBuild = false; break; }
+                materialsToConsumeInstances.push(...itemsInInventory.slice(0, requiredMat.quantity));
+            }
+            if (canBuild) {
+                materialsToConsumeInstances.forEach(itemToConsume => {
+                    const index = gameState.inventory.findIndex(invItem => invItem.id === itemToConsume.id);
+                    if (index > -1) gameState.inventory.splice(index, 1);
+                });
+                gameState.raftProgress[partKey] = true;
+                showMessage(`Successfully built the ${partDefinition.name}!`, 'success');
+                updateAllDisplays();
+            } else { showMessage(`Not enough materials to build the ${partDefinition.name}. Scavenge more!`, 'error'); }
+        }
+
+        function newDay() {
+            if (gameState.gameWon) { showMessage("You're sailing the high seas! No more island days for you.", "info"); return; }
+            gameState.day++;
+            gameState.collectedThisDayCount = 0;
+            dayCounter.textContent = gameState.day;
+            gameState.currentVisitor = null;
+            spawnVisitor();
+            if (!gameState.raftEscapeFailed && gameState.day >= RAFT_ESCAPE_DEADLINE_DAY) {
+                let raftComplete = true;
+                for (const partKey in RAFT_PARTS) { if (!gameState.raftProgress[partKey]) { raftComplete = false; break; } }
+                if (!raftComplete) {
+                    gameState.raftEscapeFailed = true;
+                    showMessage("Oh dear! Day " + RAFT_ESCAPE_DEADLINE_DAY + " has arrived, and your raft isn't ready! The currents have shifted. Escape is no longer an option.", "warning");
+                }
+            }
+            spawnTrash();
+            updateAllDisplays();
+            if (!gameState.raftEscapeFailed || (gameState.day < RAFT_ESCAPE_DEADLINE_DAY)) {
+                if (!gameState.currentVisitor || (gameState.currentVisitor && gameState.currentVisitor.greeting.indexOf("Oh dear! Day " + RAFT_ESCAPE_DEADLINE_DAY) === -1)) {
+                    showMessage(`A new day dawns! Fresh trash has washed ashore. (Day ${gameState.day})`);
+                }
+            }
+        }
+
+        function updateAllDisplays() {
+            updateCollectedTodayDisplay();
+            renderBeach();
+            renderInventory();
+            renderCraftingSlots();
+            renderRaftProgress();
+            renderVisitors();
+            renderZones();
+        }
+
+        // --- EVENT LISTENERS ---
+        newDayButton.addEventListener('click', newDay);
+        goblinifyButton.addEventListener('click', goblinify);
+        craftingSlot1.onclick = () => clearCraftingSlot(0);
+        craftingSlot2.onclick = () => clearCraftingSlot(1);
+
+        // --- INITIALIZE GAME ---
+        function initGame() {
+            dayCounter.textContent = gameState.day;
+            POSSIBLE_TRASH_ITEMS.forEach(item => { if (!item.rarity) item.rarity = 'common'; });
+            spawnTrash();
+            updateAllDisplays();
+            showMessage("Welcome, little Gremlin! Build your raft by Day " + RAFT_ESCAPE_DEADLINE_DAY + " or be stuck forever!");
+        }
+        window.onload = initGame;
+    </script>
+</body>
+
+</html>
