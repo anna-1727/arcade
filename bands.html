@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backstage Betrayal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Montserrat:wght@700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #1a202c;
+            /* A dark navy blue */
+        }
+
+        .text-glow {
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.7), 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-choice {
+            transition: all 0.3s ease;
+            border: 2px solid #f6e05e;
+            /* Bright yellow */
+            background-color: rgba(246, 224, 94, 0.1);
+            color: #f6e05e;
+            height: 100%;
+        }
+
+        .btn-choice:hover {
+            background-color: rgba(246, 224, 94, 0.3);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(246, 224, 94, 0.2);
+        }
+
+        .stat-bar-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .stat-bar {
+            transition: width 0.5s ease-in-out;
+        }
+
+        .character-description {
+            font-size: 0.875rem;
+            color: #cbd5e0;
+            /* light gray */
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        .link-home{
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+        }
+    </style>
+</head>
+
+<body
+
+    class="bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 min-h-screen flex items-center justify-center p-4">
+
+    <a class="link-home" href="index.html">HOME PAGE</a>
+
+    <div id="game-container"
+        class="w-full max-w-2xl mx-auto bg-black/30 backdrop-blur-xl rounded-2xl shadow-2xl p-6 md:p-8 text-white border border-yellow-400/30">
+
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <h1 id="scene-title"
+                class="text-3xl md:text-4xl font-bold font-montserrat text-glow tracking-wider text-yellow-300">Welcome
+                to STΔRL1GHT</h1>
+        </header>
+
+        <!-- Story Text -->
+        <div class="mb-8">
+            <p id="scene-text" class="text-lg leading-relaxed text-center"></p>
+        </div>
+
+        <!-- Choices -->
+        <div id="choices-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Choice buttons will be dynamically inserted here -->
+        </div>
+
+        <!-- Stats Display -->
+        <footer class="mt-8 pt-6 border-t border-yellow-400/30">
+            <h2 class="text-xl font-semibold text-center mb-4 text-yellow-300">Your Status</h2>
+            <div class="space-y-4">
+                <!-- Public Persona -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold">Public Persona</span>
+                        <span id="persona-value" class="font-mono bg-white/10 px-2 py-1 rounded-md text-sm"></span>
+                    </div>
+                </div>
+                <!-- Group Dynamics -->
+                <div>
+                    <span class="font-bold">Group Dynamics</span>
+                    <div class="stat-bar-container mt-1">
+                        <div id="dynamics-bar"
+                            class="stat-bar bg-gradient-to-r from-cyan-400 to-blue-400 h-3 rounded-full"></div>
+                    </div>
+                </div>
+                <!-- Career Path -->
+                <div>
+                    <span class="font-bold">Career Path</span>
+                    <div class="stat-bar-container mt-1">
+                        <div id="career-bar"
+                            class="stat-bar bg-gradient-to-r from-yellow-400 to-orange-400 h-3 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- GAME STATE ---
+        let gameState = {
+            characterName: '',
+            originalPersona: '',
+            persona: 'Newcomer',
+            dynamics: 50,
+            career: 50,
+            kaiRelationship: 0,
+            knoxRelationship: 0,
+            hunterDeal: 'none', // can be 'none', 'active', 'rejected'
+        };
+
+        // --- DOM ELEMENTS ---
+        const sceneTitleElement = document.getElementById('scene-title');
+        const sceneTextElement = document.getElementById('scene-text');
+        const choicesContainer = document.getElementById('choices-container');
+        const personaValueElement = document.getElementById('persona-value');
+        const dynamicsBarElement = document.getElementById('dynamics-bar');
+        const careerBarElement = document.getElementById('career-bar');
+
+        // --- GAME LOGIC ---
+
+        function startGame() {
+            showScene('characterCreation');
+            updateStatsUI();
+        }
+
+        function resetGame(initialState) {
+            gameState = initialState;
+            updateStatsUI();
+            showScene('start');
+        }
+
+        function updateStatsUI() {
+            personaValueElement.textContent = `${gameState.persona} (${gameState.characterName})`;
+            gameState.dynamics = Math.max(0, Math.min(100, gameState.dynamics));
+            gameState.career = Math.max(0, Math.min(100, gameState.career));
+            dynamicsBarElement.style.width = `${gameState.dynamics}%`;
+            careerBarElement.style.width = `${gameState.career}%`;
+        }
+
+        function selectChoice(choice) {
+            if (choice.effects) {
+                if (choice.effects.persona) gameState.persona = choice.effects.persona;
+                if (choice.effects.dynamics) gameState.dynamics += choice.effects.dynamics;
+                if (choice.effects.career) gameState.career += choice.effects.career;
+                if (choice.effects.kaiRelationship) gameState.kaiRelationship += choice.effects.kaiRelationship;
+                if (choice.effects.knoxRelationship) gameState.knoxRelationship += choice.effects.knoxRelationship;
+                if (choice.effects.hunterDeal) gameState.hunterDeal = choice.effects.hunterDeal;
+            }
+
+            if (choice.action === 'create_character') {
+                resetGame({
+                    characterName: choice.characterName,
+                    originalPersona: choice.effects.persona,
+                    persona: choice.effects.persona,
+                    dynamics: choice.effects.dynamics,
+                    career: choice.effects.career,
+                    kaiRelationship: 0,
+                    knoxRelationship: 0,
+                    hunterDeal: 'none',
+                });
+                return;
+            }
+
+            updateStatsUI();
+
+            // Dynamic branching based on character choice
+            let nextSceneId = choice.nextScene;
+            if (choice.nextScene === 'pastReturns') {
+                nextSceneId = `pastReturns_${gameState.characterName}`;
+            } else if (choice.nextScene === 'exLoverAppears') {
+                nextSceneId = `exLoverAppears_${gameState.characterName}`;
+            } else if (choice.nextScene === 'callOldManager') {
+                nextSceneId = `callOldManager_${gameState.characterName}`;
+            } else if (choice.nextScene === 'sawyerUnderstandsCheck') {
+                nextSceneId = (gameState.characterName === 'Alex' || gameState.characterName === 'Riley') ? 'sawyerUnderstands' : 'sawyerDoublesDown';
+            } else if (choice.nextScene === 'rebrandingCheck') {
+                if (gameState.knoxRelationship > 3) nextSceneId = 'endKnoxWedding';
+                else if (gameState.dynamics < 35 && gameState.hunterDeal === 'rejected') nextSceneId = 'endOffTheGrid';
+                else if (gameState.hunterDeal === 'double') nextSceneId = 'endHunterTriumph';
+                else nextSceneId = 'endConform';
+            }
+
+            showScene(nextSceneId);
+        }
+
+        function showScene(sceneId) {
+            const scene = story[sceneId];
+            if (!scene) {
+                console.error(`Scene with id "${sceneId}" not found! Defaulting to start.`);
+                showScene('start');
+                return;
+            }
+
+            // Use character-specific text if available, otherwise use default
+            let flavorText = scene.text[gameState.characterName] || scene.text.default || `Error: Text not found for scene ${sceneId}.`;
+
+            let processedText = flavorText
+                .replace(/\[characterName\]/g, gameState.characterName)
+                .replace(/\[originalPersona\]/g, gameState.originalPersona)
+                .replace(/\[exLoverName_Riley\]/g, "Caleb")
+                .replace(/\[exLoverName_Alex\]/g, "Maya")
+                .replace(/\[exLoverName_Jordan\]/g, "Shane")
+                .replace(/\[hunterName\]/g, "Hunter");
+
+            sceneTitleElement.textContent = scene.title;
+            sceneTextElement.innerHTML = processedText;
+
+            choicesContainer.innerHTML = '';
+
+            if (!scene.choices) { // Handle endings with no choices
+                const button = document.createElement('button');
+                button.innerHTML = "Play Again?";
+                button.className = 'btn-choice w-full md:col-span-2 font-semibold py-3 px-4 rounded-xl text-center';
+                button.addEventListener('click', () => startGame());
+                choicesContainer.appendChild(button);
+                return;
+            }
+
+            scene.choices.forEach(choice => {
+                // Conditional choices
+                if (choice.condition && !choice.condition(gameState)) {
+                    return; // Skip this choice if condition is not met
+                }
+
+                const button = document.createElement('button');
+                if (choice.description) {
+                    button.innerHTML = `${choice.text}<div class="character-description">${choice.description}</div>`;
+                } else {
+                    button.innerHTML = choice.text;
+                }
+                button.className = 'btn-choice w-full font-semibold py-3 px-4 rounded-xl text-center flex flex-col justify-center';
+                button.addEventListener('click', () => selectChoice(choice));
+                choicesContainer.appendChild(button);
+            });
+        }
+
+        // --- STORY DATA ---
+        const story = {
+            characterCreation: {
+                title: "Choose Your Past",
+                text: { default: "Before you were chosen for STΔRL1GHT, you had a life. Your past has shaped who you are and how the industry sees you. Who were you?" },
+                choices: [
+                    {
+                        text: "Riley Vance: The Social Media Star",
+                        description: "You built an empire on calculated trends and killer branding. You're a business, not a person, and you won't let anyone forget it.",
+                        action: 'create_character', characterName: 'Riley', effects: { persona: 'Trendsetter', dynamics: 40, career: 60 }
+                    },
+                    {
+                        text: "Alex Chen: The Indie Darling",
+                        description: "Your music is your soul. You built a loyal following through raw talent and authentic connection. You're here for the art, not the fame.",
+                        action: 'create_character', characterName: 'Alex', effects: { persona: 'Artist', dynamics: 50, career: 55 }
+                    },
+                    {
+                        text: "Jordan Jones: The TV Actor",
+                        description: "You were the star of a hit show, and you're used to the spotlight. This is just the next logical step in your multi-platform career.",
+                        action: 'create_character', characterName: 'Jordan', effects: { persona: 'Celebrity', dynamics: 60, career: 40 }
+                    },
+                    {
+                        text: "Morgan Ives: The Rival",
+                        description: "You were a member of 'VORTEX', STΔRL1GHT's biggest rival, but left after a bitter feud. Joining STΔRL1GHT is the ultimate revenge... or a cry for help.",
+                        action: 'create_character', characterName: 'Morgan', effects: { persona: 'Rebel', dynamics: 25, career: 65 }
+                    }
+                ]
+            },
+            start: {
+                title: "The Newest Star",
+                text: {
+                    Riley: "The rehearsal room is smaller than your last brand collab's green room, but it'll have to do. The three of them are watching you, sizing you up as a commodity. This isn't just about music; it's about market share. Time to launch the 'Riley in STΔRL1GHT' campaign.",
+                    Alex: "The air is thick with the scent of ozone and stale energy drinks. You see three strangers who are now your bandmates, their expressions a mix of curiosity and skepticism. You clutch your guitar case a little tighter, reminding yourself this is for the music, not the machine.",
+                    Jordan: "You walk into the rehearsal room like you own it—because in this industry, perception is reality. You've handled bigger sets, bigger stars, and bigger egos. Three bandmates and a manager? This is just another scene. And you always hit your mark.",
+                    Morgan: "You can feel their eyes on you, the members of STΔRL1GHT. You know what they're thinking, what everyone is thinking. You, a traitor from VORTEX. Let them stare. Every note you sing, every step you take, will be a calculated move in a war they don't even know they're fighting yet."
+                },
+                choices: [
+                    { text: "Introduce yourself with a confident smile.", nextScene: "introductions", effects: { dynamics: 5 } },
+                    { text: "Stay quiet and focus on the choreography.", nextScene: "firstRehearsal", effects: { career: 5 } }
+                ]
+            },
+            introductions: {
+                title: "Meet the Band",
+                text: {
+                    Riley: "You offer a practiced, camera-ready smile, analyzing their reactions. Sawyer's nod is professional. Kai's stare is intense, a variable to watch. Knox's grin is a clear play for charm. Amelia, the manager, cuts in with crisp efficiency. 'Glad you could make it,' she says, her eyes already on a schedule. 'Let's not waste time.' Good. Time is money.",
+                    Alex: "You give a small, genuine smile, trying to project warmth you don't entirely feel. Sawyer returns a polite nod. Kai just watches, impassive. Knox's easy grin is a welcome sight. But any chance for real connection is severed by their manager, Amelia. 'Glad you could make it,' she says briskly. 'Let's not waste time.' The machine beckons.",
+                    Jordan: "You turn on the charm, the kind that won you a Teen Choice Award. Sawyer seems unimpressed but professional. Kai is a stone wall. Knox, however, eats it up. Their manager, Amelia, is all business, cutting through the pleasantries. 'Glad you could make it,' she says, already moving on. 'Let's not waste time.' You respect the hustle.",
+                    Morgan: "You meet their stares with a cool, unbothered smile. Let them wonder. Sawyer's nod is wary. Kai's eyes are narrowed with suspicion. Knox's charm feels like a weapon. The manager, Amelia, cuts in before the silence can get too tense. 'Glad you could make it,' she says, all business. 'Let's not waste time.' Fine by you. Time to get to work."
+                },
+                choices: [{ text: "Head to rehearsal.", nextScene: "firstRehearsal" }, { text: "Take a moment to call your old manager.", nextScene: "callOldManager" }]
+            },
+            callOldManager_Riley: { title: "The Strategist", text: { default: "You call your old social media manager, Brenda. 'Riley! They're eating up the announcement. Your engagement is up 12%.' She's already planning. 'We need to leverage this. A collab, a 'tell-all' about the audition... we have to control the narrative from day one.'" }, choices: [{ text: "Plan your next move", nextScene: "firstRehearsal" }] },
+            callOldManager_Alex: { title: "The Mentor", text: { default: "You call your old indie manager, a kind man named Dave. 'Alex, I saw the news. Just... be careful, okay? That world, it can change a person. Don't lose that spark that got you here in the first place. Your real fans will be waiting, no matter what.'" }, choices: [{ text: "Heed his warning", nextScene: "firstRehearsal" }] },
+            callOldManager_Jordan: { title: "The Agent", text: { default: "You call your acting agent, Sylvia. 'Jordan, darling! This is fantastic synergy! We're getting offers for movie musicals already. Remember, this is a stepping stone. A year or two, an album, then back to the real prize: Hollywood. Don't get too attached.'" }, choices: [{ text: "Remember the plan", nextScene: "firstRehearsal" }] },
+            callOldManager_Morgan: { title: "The Enemy", text: { default: "On instinct, you call your old manager from VORTEX. He picks up. 'Ives. I should've known you'd crawl to them. You're a traitor, and I'm going to make sure everyone knows it. This isn't over.' The line goes dead, leaving a chill in the air." }, choices: [{ text: "Prepare for war", nextScene: "firstRehearsal" }] },
+            firstRehearsal: {
+                title: "First Performance",
+                text: { default: "Weeks blur into a montage of grueling dance rehearsals and media training. Finally, the day arrives: your first live televised performance with the group. The roar of the crowd is a physical force, and under the blinding lights, you know a million things could go wrong. The opening notes begin." },
+                choices: [{ text: "Focus on Kai's difficult drum sequence.", nextScene: "disasterMic" }, { text: "Stick close to Knox near the front of the stage.", nextScene: "disasterFan" }]
+            },
+            disasterMic: {
+                title: "Onstage Disaster: Mic Out",
+                text: { default: "The energy is electric. You nail your harmonies with Sawyer, and then it's Kai's moment—a powerful drum solo that transitions into a vocal bridge. The drums are thunderous, but when Kai steps to the mic... silence. Panic flashes in their eyes as the cameras zoom in. The world is watching." },
+                choices: [{ text: "Sing their part, covering for them.", nextScene: "aftermathCover", effects: { persona: 'Team Player', dynamics: 15, career: 5, kaiRelationship: 1 } }, { text: "Hit a stunning ad-lib to fill the silence.", nextScene: "aftermathOutshine", effects: { persona: 'Ambitious', dynamics: -20, career: 20, kaiRelationship: -1 } }]
+            },
+            disasterFan: {
+                title: "Onstage Disaster: Fan Frenzy",
+                text: { default: "You and Knox are playing to the crowd, his electrifying guitar riff feeding the audience's energy. Suddenly, a figure vaults over the barricade, dodging security with surprising agility. They're rushing the stage, phone out for a selfie, heading straight for an oblivious Knox. There's no time to think." },
+                choices: [{ text: "Pull Knox back, putting yourself between him and the fan.", nextScene: "aftermathHero", effects: { persona: 'Brave', dynamics: 15, career: 10, knoxRelationship: 1 } }, { text: "Shout a warning and signal security.", nextScene: "aftermathDistant", effects: { persona: 'Cautious', dynamics: -5, knoxRelationship: -1 } }]
+            },
+            aftermathCover: {
+                title: "A Grateful Ally",
+                text: { default: "The moment the curtain falls, Kai rushes to you, their face a mixture of relief and immense gratitude. 'You saved me out there. I completely froze. I owe you one, for real.' As you pack up, your phone buzzes with a call from 'Hunter' - your ex-manager and ex-lover. This night is far from over." },
+                choices: [{ text: "Chat more with Kai.", nextScene: "kaiChat", effects: { kaiRelationship: 1 } }, { text: "Chat with Knox before leaving.", nextScene: "knoxChat" }, { text: "Answer the call from Hunter.", nextScene: "hunterCall" }]
+            },
+            aftermathOutshine: {
+                title: "A Dazzling Rise",
+                text: { default: "Your stunning vocal run becomes the most replayed clip of the night. But backstage, the atmosphere is icy. Kai won't look at you, and Sawyer gives you a look that could curdle milk. Your phone buzzes. It's Hunter." },
+                choices: [{ text: "Find Kai and apologize.", nextScene: "kaiApology", effects: { dynamics: 10, kaiRelationship: 1 } }, { text: "Own it. Fame is a competition.", nextScene: "kaiLeaves" }, { text: "Ignore the band and answer Hunter's call.", nextScene: "hunterCall", effects: { dynamics: -5, career: 5 } }]
+            },
+            kaiApology: {
+                title: "Mending Fences",
+                text: { default: "You find Kai packing up their gear, deliberately avoiding eye contact. You apologize, explaining it was a spur of the moment decision. Kai listens, silent for a long moment, then gives a single, sharp nod. 'Don't let it happen again.' The ice has cracked, but it hasn't melted." },
+                choices: [{ text: "Leave it at that.", nextScene: "pastReturns" }]
+            },
+            aftermathHero: {
+                title: "Front Page Hero",
+                text: { default: "Your selfless act makes headlines. Backstage, Knox is incredibly thankful. 'That was insane. You didn't have to do that, thank you.' His gaze lingers a moment longer than necessary, and the air crackles with unspoken energy." },
+                choices: [{ text: "Acknowledge his thanks warmly.", nextScene: "knoxConnection", effects: { knoxRelationship: 1 } }, { text: "Brush it off professionally.", nextScene: "tabloidTrouble" }]
+            },
+            aftermathDistant: {
+                title: "A Professional Distance",
+                text: { default: "Security tackles the fan and drags them offstage. The show continues, but you notice a flicker of disappointment in Knox's eyes. Amelia later tells you, 'Good call. Never engage.' You played it safe, but it created a rift." },
+                choices: [{ text: "Confront Knox about his carelessness.", nextScene: "knoxConfrontation" }, { text: "Let it go and move on.", nextScene: "pastReturns" }]
+            },
+            knoxConfrontation: {
+                title: "The Confrontation",
+                text: { default: "Later, you pull Knox aside. 'You need to be more aware on stage. What happened tonight was dangerous.'" },
+                choices: [{ text: "Keep your tone calm and concerned.", nextScene: "knoxApologizes" }, { text: "Let your frustration show.", nextScene: "managerKnoxConfrontation", effects: { knoxRelationship: -1, dynamics: -5 } }]
+            },
+            knoxApologizes: {
+                title: "A Moment of Honesty",
+                text: { default: "Knox looks genuinely ashamed. 'You're right. I get lost in the music sometimes. I was careless. Thank you... for looking out for me.' The conversation softens, turning into a moment of real connection." },
+                choices: [{ text: "Accept his apology.", nextScene: "knoxConnection" }]
+            },
+            managerKnoxConfrontation: {
+                title: "Called to the Office",
+                text: { default: "Your argument with Knox is overheard. Amelia summons you both to her office. 'This is unacceptable,' she says. 'Knox, you were reckless. [characterName], your approach was divisive. We're a team, not a collection of solo acts telling each other what to do.'" },
+                choices: [{ text: "Apologize and defer to Amelia's authority.", nextScene: "pastReturns", effects: { dynamics: 5 } }, { text: "Stand your ground. 'I was right.'", nextScene: "kickedOut", effects: { dynamics: -15 } }]
+            },
+            knoxChat: {
+                title: "A Quiet Moment",
+                text: { default: "As you're packing your bag, exhausted, Knox catches your eye from across the room. He walks over, a genuine, tired smile on his face. 'Hey, that was pretty intense out there tonight. For what it's worth, you handled it like a pro. Glad you're here, [characterName].'" },
+                choices: [{ text: "Smile back. 'Glad to be here.'", nextScene: "tabloidTrouble", effects: { knoxRelationship: 1 } }, { text: "Nod. 'Just doing my job.'", nextScene: "tabloidTrouble" }]
+            },
+            kaiChat: {
+                title: "A Deeper Conversation",
+                text: { default: "You find Kai away from the others, quietly tuning a drum. They look up, appreciation in their eyes. 'I'm not used to people having my back like that,' Kai admits. 'In this business... it's rare. Thank you, [characterName].'" },
+                choices: [{ text: "'We're a team. That's what we do.'", nextScene: "kaiConnection", effects: { kaiRelationship: 2, dynamics: 5 } }, { text: "'Anyone would have done the same.'", nextScene: "tabloidTrouble" }]
+            },
+            hunterCall: {
+                title: "A Voice from the Past",
+                text: { default: "You step outside and answer the phone. The voice of [hunterName] is unmistakable. 'Saw the show, starlight. You were good. But that little stunt? That's not the ruthless star I built.' There's a pause. 'I'm back in town. We should talk about your future.'" },
+                choices: [{ text: "Agree to meet. Know thy enemy.", nextScene: "hunterConfrontation", effects: { career: -5 } }, { text: "Tell them to lose your number.", nextScene: "pastReturns", effects: { dynamics: 5, hunterDeal: 'rejected' } }]
+            },
+            hunterConfrontation: {
+                title: "Deal with the Devil",
+                text: { default: "[hunterName] wants back in. They claim to have connections that could skyrocket your career, separate from the band. 'STΔRL1GHT is a stepping stone, [characterName]. With me, you could be the whole damn constellation.' The offer is tempting, a fast track to solo stardom." },
+                choices: [{ text: "Reject the offer flat out.", nextScene: "pastReturns", effects: { hunterDeal: 'rejected' } }, { text: "Accept Hunter's offer. Time to go solo.", nextScene: "endHunterTriumph" }, { text: "String them along. Play both sides.", nextScene: "doubleAgent", effects: { career: 10, dynamics: -15, hunterDeal: 'active' } }]
+            },
+            doubleAgent: {
+                title: "Playing With Fire",
+                text: { default: "You keep Hunter on the line, feeding them non-committal answers while secretly using their advice to boost your own profile. It's a dangerous game. You're getting more solos and better press, but Sawyer's stares are getting colder and you're constantly looking over your shoulder." },
+                choices: [{ text: "Cut Hunter loose before it's too late.", nextScene: "pastReturns", effects: { hunterDeal: 'rejected' } }, { text: "Keep playing the game. The reward is worth the risk.", nextScene: "endHunterTriumph", effects: { hunterDeal: 'double' } }]
+            },
+            knoxConnection: {
+                title: "Secret Harmony",
+                text: { default: "The bond forged in chaos deepens. In stolen moments—a shared glance across a studio, a quiet coffee—something real begins to grow between you and Knox. It's unspoken, a dangerous secret in a world where every move is scrutinized." },
+                choices: [{ text: "Let the secret relationship blossom.", nextScene: "secretSpotted", effects: { knoxRelationship: 2 } }, { text: "Pull back. It's too risky.", nextScene: "pastReturns", effects: { knoxRelationship: -1 } }]
+            },
+            kaiConnection: {
+                title: "Quiet Understanding",
+                text: { default: "Your alliance with Kai solidifies into a powerful bond. You become each other's anchor in the storm of fame. Kai, often seen as the stoic one, opens up to you. It's a partnership built on trust, a stark contrast to the band's flashy public image." },
+                choices: [{ text: "Nurture this close friendship.", nextScene: "managerWarns", effects: { kaiRelationship: 2 } }, { text: "Let it fade back to being just bandmates.", nextScene: "pastReturns", effects: { kaiRelationship: -1 } }]
+            },
+            secretSpotted: {
+                title: "Caught by Sawyer",
+                text: { default: "After a long recording session, you and Knox are sharing a quiet, laughing moment in the hallway. Suddenly, you hear a cough. Sawyer is standing there, arms crossed. 'This. This is what I'm talking about,' they say, their voice low. 'This becomes a liability. For all of us. Fix it.'" },
+                choices: [{ text: "Promise you'll be more careful.", nextScene: "pastReturns", effects: { dynamics: 5 } }, { text: "Try to explain honestly.", nextScene: "sawyerUnderstandsCheck" }, { text: "This has nothing to do with the band.", nextScene: "kickedOut", effects: { dynamics: -30 } }]
+            },
+            managerWarns: {
+                title: "A Gentle Warning",
+                text: { default: "Amelia calls you into her office. 'I've noticed you and Kai are... close,' she says, steepling her fingers. 'Kai's public image is the 'lone wolf.' It's a core part of their appeal. A public-facing 'best friendship' complicates that narrative. Just... be mindful of the cameras.'" },
+                choices: [{ text: "Agree to be more discreet.", nextScene: "kaiDiscretion", effects: { kaiRelationship: -1 } }, { text: "Defend your friendship. 'We're a team.'", nextScene: "kaiBlackmail", effects: { dynamics: -5, kaiRelationship: 1 } }]
+            },
+            kaiDiscretion: {
+                title: "A Growing Distance",
+                text: { default: "You take Amelia's advice, consciously putting distance between you and Kai. The easy camaraderie fades, replaced by a professional coolness. You see a flash of hurt in Kai's eyes after you brush them off before a press event. The band is safer, but you feel a genuine loss." },
+                choices: [{ text: "This was the right call.", nextScene: "pastReturns" }, { text: "Regret the distance. Try to fix it later.", nextScene: "pastReturns", effects: { kaiRelationship: 1 } }]
+            },
+            kaiBlackmail: {
+                title: "The Price of Friendship",
+                text: { default: "Your defense of your friendship with Kai doesn't go unnoticed. Hunter, ever the opportunist, leaks a fabricated, wildly romantic story about you and Kai to a gossip blog. Amelia is furious. Hunter calls you with an offer: they'll kill the story if you convince Kai to give up their coveted solo on the next single." },
+                choices: [{ text: "Refuse the blackmail. The truth will win out.", nextScene: "endScandal", effects: { persona: "Loyal" } }, { text: "Betray Kai to save the band from the drama.", nextScene: "endBetrayal", effects: { persona: "Pragmatist", dynamics: -25, career: 10 } }]
+            },
+            tabloidTrouble: {
+                title: "Tabloid Drama",
+                text: { default: "Your phone buzzes incessantly the next morning. A gossip site has plastered a candid photo of you and Knox talking backstage. The headline screams: 'A STΔRL1GHT ROMANCE? New Member [characterName] & Knox Get Cozy!' The angle makes it look far more intimate than it was. Your response will define the narrative." },
+                choices: [{ text: "Publicly deny it. Strictly professional.", nextScene: "pastReturns", effects: { persona: 'Professional', career: 5 } }, { text: "Lean into it. Let them talk.", nextScene: "exLoverAppears", effects: { persona: 'Rebel', career: 10, dynamics: -10 } }]
+            },
+            exLoverAppears_Riley: { title: "A Ghost in the Comments", text: { default: "Your 'no comment' on the Knox rumors only fuels the fire. That night, you see a familiar, dreaded username in your DMs: [exLoverName_Riley]. 'Wow, Riley. Trading up already? I guess I shouldn't be surprised,' the message reads. 'Don't forget who helped build your brand. It'd be a shame if your followers learned how the sausage gets made.'" }, choices: [{ text: "Ignore the message and block him.", nextScene: "confrontedBySawyer" }, { text: "Meet with him to clear the air.", nextScene: "exConfrontation" }] },
+            exLoverAppears_Alex: { title: "An Unwanted Call", text: { default: "The buzz about you and Knox is everywhere. As you're trying to find a quiet corner, your phone rings with an unsaved number. You answer it, and a voice you hoped you'd never hear again says your name. It's [exLoverName_Alex]. 'I saw the news, Alex. You always did fall for the charming ones. Just remember who was there before all this glitter.'" }, choices: [{ text: "Hang up immediately.", nextScene: "comfortedByKnox" }, { text: "Agree to talk. You need to end this.", nextScene: "exConfrontation" }] },
+            exLoverAppears_Jordan: { title: "An Unexpected Visitor", text: { default: "Amelia's assistant buzzes your dressing room. 'Someone named [exLoverName_Jordan] is here to see you.' Your heart drops. Your ex, the one from before the TV show, before the fame. They walk in, looking you up and down. 'So the rumors are true. You and the guitarist. You move on fast, Jordan. Real fast.'" }, choices: [{ text: "Tell them to leave.", nextScene: "comfortedByKnox" }, { text: "Hear them out. It's better than a public scene.", nextScene: "exConfrontation" }] },
+            exLoverAppears_Morgan: { title: "An Old Flame, A New War", text: { default: "The Knox rumors reach VORTEX. Your ex, who is still in the band, texts you a screenshot of the article. 'Really, Morgan? You go crawling to our rivals and the first thing you do is cause drama? You're going to regret this at the Battle of the Bands.' The threat is clear." }, choices: [{ text: "Block their number.", nextScene: "comfortedByKnox" }, { text: "'Bring it on.'", nextScene: "rivalFeud", effects: { career: 5 } }] },
+            exConfrontation: {
+                title: "The Confrontation",
+                text: { default: "You meet your ex in a quiet cafe, the air thick with unresolved history. They lay it all out: the hurt, the jealousy, the feeling of being left behind. 'I still care about you,' they finally admit, their anger softening into something more vulnerable. 'Is this... is this thing with Knox real? Is there anything left for us?'" },
+                choices: [{ text: "It's over between us. It has been for a long time.", nextScene: "comfortedByKnox", effects: { dynamics: -5 } }, { text: "'Maybe... maybe there is.' Get back together.", nextScene: "endRekindled", effects: { career: -10 } }]
+            },
+            comfortedByKnox: {
+                title: "A Shoulder to Lean On",
+                text: { default: "The encounter with your ex leaves you shaken. Knox finds you later, looking pale and stressed. 'Hey, are you okay? You seem... off.' He listens patiently as you vaguely explain the situation. 'I'm sorry you're dealing with that,' he says softly. 'For what it's worth, I'm here if you need to talk. About anything.'" },
+                choices: [{ text: "Lean in and admit the rumors are getting to you.", nextScene: "knoxConnection", effects: { knoxRelationship: 2, dynamics: 5 } }, { text: "Thank him but keep your distance.", nextScene: "pastReturns", effects: { knoxRelationship: 1 } }]
+            },
+            confrontedBySawyer: {
+                title: "The Lead Singer's Wrath",
+                text: { default: "Sawyer corners you before the next rehearsal, arms crossed. 'I need you to get your head straight. All this drama—the rumors, your ex, whatever—it's affecting the group. We were a well-oiled machine before you got here. Fix it, or I'll have Amelia fix it for you.'" },
+                choices: [{ text: "Promise to shut it down and focus.", nextScene: "pastReturns" }, { text: "Try to explain honestly.", nextScene: "sawyerUnderstandsCheck" }, { text: "Tell them it's none of their business.", nextScene: "kickedOut", effects: { dynamics: -30 } }]
+            },
+            sawyerUnderstands: {
+                title: "A Tense Truce",
+                text: {
+                    Riley: "You spin a carefully crafted version of the truth for Sawyer, emphasizing the potential for positive press and 'couple goals' engagement. Sawyer, ever the pragmatist, sees the logic. 'Fine. But if your personal brand starts conflicting with the STΔRL1GHT brand, we have a problem. Don't make me choose.'",
+                    Alex: "You speak from the heart, explaining the unexpected connection you've felt. Sawyer listens, their hard expression softening almost imperceptibly. 'The last thing this band needs is drama,' they say. 'But... I get it. Just be smart. Don't give the tabloids anything to work with.'",
+                    Morgan: "You lay out a cold, logical case. A fake relationship is a classic PR move to generate buzz, something VORTEX never understood. Sawyer raises an eyebrow, intrigued despite their suspicion. 'You're playing a dangerous game, Ives. As long as the band benefits... for now.'",
+                    default: "You explain everything to Sawyer, laying your cards on the table. They listen, their expression unreadable. Finally, they sigh. 'Fine. I get it. But if this starts affecting our sound or our image, I'm coming to Amelia. Keep it together.'"
+                },
+                choices: [{ text: "Continue with a new understanding", nextScene: "pastReturns", effects: { dynamics: 10, knoxRelationship: 1 } }]
+            },
+            sawyerDoublesDown: {
+                title: "The Ultimatum",
+                text: {
+                    Jordan: "You try to explain, but coming from you, it sounds like you're putting your own desires above the group's stability. Sawyer isn't having it. 'I don't care about your excuses. I care about this band,' they say coldly. 'End it with Knox, or I'm going to Amelia. Your choice.'",
+                    Morgan: "Your attempt to explain is met with a wall of suspicion. 'You think I'm stupid?' Sawyer scoffs. 'VORTEX pulled this exact stunt two years ago. I'm not letting you poison this band from the inside. End it, or you're out.'",
+                    Alex: "Your heartfelt explanation comes out as a jumbled, emotional mess that Sawyer interprets as instability. 'I can't deal with this. The band needs focus. End it, or you're out.'",
+                    Riley: "Your attempt to frame it as a 'brand opportunity' backfires spectacularly. 'This isn't one of your livestreams, Riley. This is a multi-million dollar enterprise,' Sawyer says, disgusted. 'You're a liability. End it with Knox or I go to Amelia.'"
+                },
+                choices: [{ text: "Agree to end things with Knox.", nextScene: "endKnoxImplosion", effects: { knoxRelationship: -3, dynamics: 5 } }, { text: "Refuse. 'You can't control me.'", nextScene: "kickedOut" }]
+            },
+            pastReturns_Riley: { title: "An Old Rival", text: { default: "At an industry party, you spot 'GlitterBomb', a rival influencer you crushed on your way up. They approach, phone recording. 'Riley! Selling out for mainstream fame? Sad.'" }, choices: [{ text: "Laugh it off and walk away.", nextScene: "damageControl" }, { text: "Engage, defend your choices.", nextScene: "rivalFeud" }] },
+            pastReturns_Alex: { title: "A Ghost From The Past", text: { default: "Leaving the studio, you're cornered by your old manager, Martin. 'Alex! I saw you made it big. I still own the rights to your early songs. The ones your real fans love. Maybe we should collaborate again.' His smile is greedy." }, choices: [{ text: "'My lawyers will call you.'", nextScene: "damageControl" }, { text: "Hear him out. Knowledge is power.", nextScene: "martinScheme" }] },
+            pastReturns_Jordan: { title: "A Former Flame", text: { default: "Your ex-costar, Blake, 'coincidentally' shows up at your favorite coffee shop with paparazzi. 'Jordan! I always knew you were meant for more than just acting,' they say loudly. 'Just telling everyone how you always wanted to be a singer...'" }, choices: [{ text: "Be polite but distant.", nextScene: "damageControl" }, { text: "Use this. 'Funny, I don't remember you saying that at auditions.'", nextScene: "blakeExposed" }] },
+            pastReturns_Morgan: { title: "Battle of the Bands", text: { default: "Amelia calls you in. STΔRL1GHT has been invited to a 'Battle of the Bands' charity event. The headliner? Your old band, VORTEX. 'This is a... delicate situation,' Amelia says. 'We need to win, but we also need to manage the optics of you competing against them.'" }, choices: [{ text: "Focus on winning, no matter what.", nextScene: "battleOfTheBands", effects: { career: 10 } }, { text: "Try to make peace with your old bandmates.", nextScene: "rivalFeud", effects: { dynamics: 10, career: -5 } }] },
+            rivalFeud: { title: "Influencer War", text: { default: "Your feud with your rival explodes online. Your metrics are through the roof, but Amelia is livid about the 'off-brand' drama. The rest of the band is caught in the crossfire of your personal war, and their patience is wearing thin." }, choices: [{ text: "Apologize to the band and back down.", nextScene: "damageControl" }, { text: "Double down. This is good for my brand.", nextScene: "endRebel" }] },
+            martinScheme: { title: "The Old Songs", text: { default: "Martin wants an exorbitant fee for the rights to your old music, threatening to re-release them with another artist. It would confuse your oldest fans and undermine the artistic integrity you've fought to maintain. He knows exactly how to hurt you." }, choices: [{ text: "Take this problem to Amelia.", nextScene: "damageControl" }, { text: "Leak the story to your fans yourself.", nextScene: "endRebel" }] },
+            blakeExposed: { title: "The Interview", text: { default: "Your witty comeback goes viral. An entertainment show offers you a primetime interview about your time on the show with Blake. It's a golden opportunity to control the narrative... or to start a war you can't win." }, choices: [{ text: "Give a tell-all interview.", nextScene: "endRebel" }, { text: "Decline gracefully. 'I'm focused on the music.'", nextScene: "damageControl" }] },
+            battleOfTheBands: {
+                title: "Showdown with VORTEX",
+                text: { default: "The night is electric. VORTEX performs right before you, and they're good—polished and energetic. You can see your ex glaring at you from side stage. This is it. Your chance to prove you made the right choice. To prove you're better off with STΔRL1GHT." },
+                choices: [{ text: "Stick to the plan. A perfect performance is the best revenge.", nextScene: "endVortexVanquished", effects: { career: 10, dynamics: 5 } }, { text: "Add a new, unapproved solo that showcases your talent.", nextScene: "endRivalPoach", effects: { career: 15, dynamics: -10 } }]
+            },
+            damageControl: {
+                title: "Damage Control",
+                text: { default: "Amelia calls an emergency meeting. 'This is a mess,' she says, pinching the bridge of her nose. 'Your past is officially interfering with our present. We need to do a full rebrand—new look, new sound, a tightly controlled narrative. The label insists. No more surprises.'" },
+                choices: [{ text: "This is it. The final choice.", nextScene: "rebrandingCheck" }]
+            },
+            managerTrouble: {
+                title: "Manager Trouble",
+                text: { default: "Amelia calls you into her sleek office. 'We have a problem. Your personal drama is becoming a liability, and we have sponsors to think about. We need to fix your image, now.'" },
+                choices: [{ text: "Agree to their rebranding ideas.", nextScene: "rebrandingCheck" }, { text: "Refuse. My identity is not for sale.", nextScene: "endRebel" }]
+            },
+            endConform: {
+                title: "The Pop Machine",
+                text: {
+                    Riley: "You agree to the rebranding. It's just a new marketing strategy, after all. The group's metrics soar, and so does your personal brand recognition. You've successfully integrated, but you find yourself scrolling through your own feed, barely recognizing the focus-grouped star staring back at you.",
+                    Alex: "For the music, you agree. You trade your thrift-store flannels for designer jackets and your heartfelt lyrics for algorithm-approved hooks. The band becomes bigger than ever, but the music feels hollow. At night, you secretly write songs that no one but you will ever hear.",
+                    Jordan: "Of course you agree. An image is a costume, and you've worn dozens. You play the part of the 'new' you perfectly, and your career thrives. You're a household name, a true star... but the role is starting to feel less like a performance and more like a permanent cage.",
+                    Morgan: "You agree to the rebranding, seeing it as a necessary camouflage. By playing their game, you make yourself indispensable. STΔRL1GHT's success is your success, and from the inside, you can gather all the secrets you need. Your revenge is a long game, and you are nothing if not patient."
+                }
+            },
+            endRebel: {
+                title: "Going Indie",
+                text: { default: "You refuse to compromise your identity. The fallout is massive, and you part ways with STΔRL1GHT. Your dedicated fans, who loved [characterName] from the start, rally behind you. You lose the global stage but gain something more valuable: control of your own destiny." }
+            },
+            endKnoxImplosion: {
+                title: "The Implosion",
+                text: { default: "The pressure, combined with the stress of your drama with Knox, becomes too much. The secret arguments and resentment boil over. After a vote you weren't present for, Amelia informs you that the band has decided to move on without you. It's a bitter, lonely end to your time in the spotlight." }
+            },
+            endKnoxWedding: {
+                title: "A New Harmony",
+                text: { default: "Through the stress of the rebranding, you and Knox become inseparable. Your love story captivates the public, more than any marketing campaign could. The band's music takes on a new, romantic depth. The final scene? A magazine cover announcing your engagement. The wedding is in four months." }
+            },
+            endRivalPoach: {
+                title: "The Ultimate Betrayal",
+                text: { default: "As Morgan, you prove your talent is undeniable. During the Battle of the Bands, your show-stealing solo catches the eye of a major label scout. They make you an offer VORTEX couldn't match and STΔRL1GHT can't refuse. You leave them both in the dust, a true solo act at last." }
+            },
+            endVortexVanquished: {
+                title: "Victory Lap",
+                text: { default: "As Morgan, you lead STΔRL1GHT in a flawless, powerful performance. You don't just win; you dominate. The press declares STΔRL1GHT the undisputed pop champion, and you've finally, publicly, put your past with VORTEX behind you. You've found a new home, and a new victory." }
+            },
+            endOffTheGrid: {
+                title: "Vanishing Act",
+                text: { default: "The blackmail, the rebranding, the constant pressure... it's too much. One night, you pack a bag and simply disappear. No note, no interviews. Years later, fans still trade conspiracy theories about what happened to [characterName], the shooting star who vanished without a trace." }
+            },
+            kickedOut: { title: "Fallen Star", text: { default: "Your refusal to fall in line is the final straw. Sawyer's ultimatum to Amelia is clear: it's you or them. The label backs the established star. You're unceremoniously dropped from the group, a cautionary tale whispered about in the industry. Your time in STΔRL1GHT is over." } },
+            kaiLeaves: { title: "A Star Falls", text: { default: "The tension becomes unbearable. After a heated argument, Kai announces they're leaving STΔRL1GHT. The news shatters the fanbase. You got your moment, but you broke the group." } },
+            endRekindled: { title: "A Different Duet", text: { default: "You choose the past. Leaving STΔRL1GHT behind, you and your ex decide to give it another shot, away from the blinding spotlights. It's a quieter life, but it's real. For the first time in a long time, the future is an unwritten song." } },
+            endHunterTriumph: { title: "A Deal with the Devil", text: { default: "You take Hunter's offer. The breakup with STΔRL1GHT is messy and public, burning every bridge. Your solo career, fueled by Hunter's ruthless tactics, explodes. You're a bigger star than ever, but you're also completely alone, tied to the puppet master who pulls your strings." } },
+            endScandal: { title: "Trial by Fire", text: { default: "You refuse to be blackmailed. The fake story about you and Kai runs, and the fallout is immense. It takes weeks of damage control from Amelia and a united front from the band to weather the storm. You and Kai's friendship is tested by the public scrutiny but ultimately survives, stronger than ever. The band is battered, but not broken." } },
+            endBetrayal: { title: "The Coldest Cut", text: { default: "You convince Kai to give up their solo for the 'good of the band.' They agree, but the trust between you is shattered, replaced by a cold, professional distance. The band is stable, your career is secure, but you sacrificed a true friendship for it, and you have to live with that choice every time you share a stage." } }
+        };
+        window.onload = startGame;
+    </script>
+</body>
+
+</html>

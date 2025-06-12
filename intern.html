@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChairForce One</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            /* A dark slate/office blue */
+        }
+
+        .game-window,
+        .character-selection-window {
+            border: 2px solid #374151;
+            /* gray-700 */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .choice-button,
+        .character-card {
+            transition: all 0.2s ease-in-out;
+            border: 1px solid transparent;
+        }
+
+        .choice-button:hover,
+        .character-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+            border-color: #38bdf8;
+            /* sky-400 */
+        }
+
+        .chaos-button {
+            background-color: #a21caf;
+            /* fuchsia-700 */
+        }
+
+        .chaos-button:hover {
+            background-color: #be185d;
+            /* pink-700 */
+            border-color: #f472b6;
+            /* pink-400 */
+        }
+
+        .stat-bar {
+            transition: width 0.5s ease-in-out;
+        }
+
+        .stat-mod {
+            font-weight: 700;
+        }
+
+        .stat-mod-pos {
+            color: #4ade80;
+        }
+
+        .stat-mod-neg {
+            color: #f87171;
+        }
+
+        .libby-effect {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        .link-home{
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+    </style>
+</head>
+
+<body class="text-white">
+    <a class="link-home" href="index.html">HOME PAGE</a>
+    <div id="game-container-wrapper" class="min-h-screen flex items-center justify-center p-4">
+
+        <div id="character-selection-window"
+            class="w-full max-w-4xl bg-gray-800 bg-opacity-90 rounded-xl shadow-2xl p-8 character-selection-window"
+            style="display: none;">
+            <h1 class="text-center text-4xl font-bold mb-2 text-white">Which Intern Are You?</h1>
+            <p class="text-center text-gray-300 mb-8">Your choice defines your story and your stats.</p>
+            <div id="character-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+
+        <div id="game-play-window"
+            class="w-full max-w-3xl bg-gray-800 bg-opacity-90 rounded-xl shadow-2xl p-8 game-window"
+            style="display: none;">
+            <div id="character-display" class="text-center mb-6"></div>
+            <div id="stats-container" class="mb-8 space-y-3" style="display: none;"></div>
+            <div id="story-content" class="text-center"></div>
+            <div id="choices-container" class="mt-8 flex flex-col md:flex-row justify-center flex-wrap gap-4"></div>
+        </div>
+    </div>
+
+    <script>
+        const storyContentEl = document.getElementById('story-content');
+        const choicesContainerEl = document.getElementById('choices-container');
+        const statsContainerEl = document.getElementById('stats-container');
+        const charSelectionWindow = document.getElementById('character-selection-window');
+        const charGridEl = document.getElementById('character-grid');
+        const gamePlayWindow = document.getElementById('game-play-window');
+        const charDisplayEl = document.getElementById('character-display');
+
+        let currentState;
+        let stats;
+        let selectedCharacterKey;
+        let flags = {};
+
+        const characters = {
+            abby: { name: 'Abby', desc: 'An accounting major who sees the world in spreadsheets. Deeply terrified of red ink.', mods: { reputation: 0, morale: -5, finance: 15 } },
+            nathaniel: { name: 'Nathaniel', desc: 'A marketing playboy who believes "synergy" is a cologne scent. His expense reports are fiction.', mods: { reputation: -10, morale: 15, finance: -5 } },
+            harlan: { name: 'Harlan', desc: 'This intern color-codes his staples and uses a standing desk. A beacon of professionalism.', mods: { reputation: 15, morale: -5, finance: 0 } },
+            dax: { name: 'Dax', desc: 'Fired from his last job for "being too real." A chaos agent with access to unique, high-risk options.', mods: { reputation: -10, morale: 0, finance: -10 }, isChaos: true },
+            libby: { name: 'Libby', desc: 'She knows everything, including the consequences of your actions. A powerful, terrifying ally with eerie insights.', mods: { reputation: 10, morale: 10, finance: 0 }, isClairvoyant: true },
+            trent: { name: 'Trent', desc: 'A high schooler who just wants to afford a new video game. Everyone loves his zero-investment attitude.', mods: { reputation: -5, morale: 15, finance: -10 } },
+        };
+
+        const story = {
+            title_screen: {
+                title: "The Intern is the CEO",
+                get_text: () => "You're an intern at 'ChairForce One', a company that sells... important things. Your goals were simple: eat the free bagels and add a respectable line to your resume. But today, the office is eerily silent. An automated email informs you that due to a mandatory off-site 'synergy-building' retreat, the 'CEO for a Day' initiative has randomly selected... you. Your reign begins now.",
+                choices: [{ texts: { default: "Let's do this." }, next: 'show_character_select' }]
+            },
+            start_game: {
+                title: "A Call From HR",
+                get_text: (char) => ({
+                    'abby': "The imposing red phone on the CEO's desk rings. Caller ID: HR. Your heart races—an unscheduled human interaction that could have budget implications. This is your first test.",
+                    'nathaniel': "The 'synergy phone' on the CEO's desk rings. Caller ID: HR. Perfect, your first networking opportunity. You flash your reflection a winning smile before answering.",
+                    'harlan': "The primary communication device on the CEO's desk activates. Caller ID: Human Resources. You straighten your posture. It is imperative to establish a professional tone from the outset.",
+                    'dax': "The big red telephone starts screaming. Dax eyes it suspiciously. It's probably a trick. But what if it's a quest? Dax answers.",
+                    'libby': "The red phone on the desk begins to ring. You knew it would. The Caller ID says HR, but you sense the call is really about the 'gel pen incident' in accounting.",
+                    'trent': "Ugh, the phone is ringing. It's the CEO's desk phone. Super loud. Can you get fired for not answering a phone on your first day as fake CEO? Probably."
+                })[char],
+                choices: [
+                    { texts: { default: "Answer in a deep, authoritative voice.", dax: "Use the Voice of Command." }, next: 'hr_dilemma', effects: { reputation: 5, morale: -5 } },
+                    { texts: { default: "Confess you're just the intern.", abby: "Disclose my current employment status.", nathaniel: "Be authentic and transparent.", trent: "Just say I'm an intern." }, next: 'confess_leniency', effects: { morale: 5, reputation: -5 } },
+                ]
+            },
+            hr_dilemma: {
+                title: "The HR Dilemma",
+                get_text: (char) => ({
+                    'abby': "Your surprisingly convincing baritone works. 'CEO,' says a nervous HR rep. 'We need a decision on the Q3 wellness initiative. I can forward the cost-benefit analysis, but the team is about to revolt.'",
+                    'nathaniel': "Your smooth, confident tone works. 'CEO,' says a nervous HR rep. 'The team needs your vision on the new wellness initiative. We need a win for company culture, and we need it now.'",
+                    'harlan': "Your professional phone manner is flawless. 'CEO,' says a nervous HR rep. 'Apologies for the intrusion, but we require executive sign-off on the Q3 wellness initiative. There are two competing proposals.'",
+                    'dax': "Dax's voice is deep, like a bear who has seen things. The HR man squeaks, 'CEO! We need you to make a choice! A choice that will echo in eternity! Or at least until Q4!'",
+                    'libby': "Your calm, all-knowing voice settles the HR rep. 'CEO, thank you for picking up. As you're aware, the wellness initiative has reached a critical impasse. Your guidance is needed.'",
+                    'trent': "You try to sound old. It kind of works. 'Uh, CEO?' says a nervous HR rep. 'The team's about to riot over this wellness thing. You gotta pick one. Please?'"
+                })[char],
+                choices: [
+                    { texts: { default: "Approve a 4-day workweek.", abby: "High morale, high cost. Approve.", trent: "Oh, cool. A three-day weekend." }, next: 'four_day_week_fallout', effects: { morale: 30, finance: -20, reputation: 10 } },
+                    { texts: { default: "Implement 'Silent Wednesdays'.", harlan: "Enforce the Cone of Silence.", dax: "Make the talking-monkeys be quiet." }, next: 'silent_wednesday_fallout', effects: { morale: -30, finance: 5, reputation: -10 } }
+                ],
+                chaosChoice: {
+                    texts: { dax: "Unleash... Mandatory Fun Fridays." },
+                    next: 'mandatory_fun_ending',
+                    effects: { morale: 40, finance: -30, reputation: -20 }
+                }
+            },
+            confess_leniency: {
+                title: "An Unexpected Task",
+                get_text: (char) => ({
+                    abby: "You confess your intern status. 'Oh, thank goodness,' the HR rep sighs. 'Listen, can you just handle a delivery of 50 artisanal caramel macchiatos? The expense is... questionable, so just sign for it.'",
+                    nathaniel: "You're honest. 'An intern? Great!' the HR rep says. 'The board's macchiatos are here. If you can make sure they're distributed, it'll look great. Big opportunity for you.'",
+                    harlan: "You state your position. 'Understood,' says HR. 'A task requires completion: receipt of 50 coffee-based beverages for the board. Please sign the invoice and ensure proper distribution.'",
+                    dax: "Dax reveals his true form! An intern! The HR man seems relieved. 'A small quest for you, Dax! Sign for the magic bean juice. Fifty cups!'",
+                    libby: "You confess you're the intern. 'I know,' sighs the HR rep. 'The board's coffee is here. You saw it arriving, didn't you? Just sign for it, please.'",
+                    trent: "You tell him you're an intern. 'Whatever,' he says. 'Just go sign for some coffees that got delivered. It's for the board or something.'"
+                })[char],
+                choices: [
+                    { texts: { default: "Sign for it. Free coffee for the people!", nathaniel: "Boost morale with premium caffeine." }, next: 'audit_prep', effects: { morale: 15, finance: -5 } },
+                    { texts: { default: "Send the barista away. Fiscal responsibility!", abby: "Reject the unbudgeted expense." }, next: 'audit_prep', effects: { morale: -15, finance: 5 } }
+                ]
+            },
+            four_day_week_fallout: {
+                title: "Hostile Takeover Bid",
+                get_text: (char) => ({
+                    abby: "The 4-day workweek memo boosts morale, but an encrypted email from 'NeighRawr Inc.' arrives with a hostile takeover offer. They see your morale-focused spending as financial weakness.",
+                    nathaniel: "The 4-day workweek is a huge culture win! Then you get a takeover offer from 'NeighRawr Inc.' They must have seen your amazing brand engagement and want a piece of the action!",
+                    harlan: "The four-day workweek implementation is complete. However, an external entity, 'NeighRawr Inc.' has submitted a hostile acquisition proposal, citing perceived operational vulnerability.",
+                    dax: "The people are happy! They work less for Dax! But now the NeighRawr tribe attacks! They send a war-scroll, offering to buy the whole village! They think Dax is weak!",
+                    libby: "As the wave of employee joy washes over the company, a darker current emerges from outside. An email from 'NeighRawr Inc.' with a takeover offer. They misread the energy. A foolish mistake.",
+                    trent: "So everyone gets Fridays off now. Cool. Then some other company called NeighRawr tries to buy us. They sound like they're trying too hard."
+                })[char],
+                choices: [
+                    { texts: { default: "Leak the offer to the press.", nathaniel: "Spin this into a PR victory." }, next: 'leaked_offer_fallout', effects: { reputation: 20, finance: -10 } },
+                    { texts: { default: "Ignore them. They're bluffing.", trent: "Whatever." }, next: 'project_weasel', effects: { reputation: -15 } }
+                ]
+            },
+            silent_wednesday_fallout: {
+                title: "Server Farm Crisis",
+                get_text: (char) => ({
+                    abby: "The 'Silent Wednesdays' memo is met with quiet resentment, a predictable hit to morale. More pressingly, you get a high-priority ticket: the server farm is overheating. An expensive, unbudgeted repair is needed immediately.",
+                    nathaniel: "Silent Wednesdays are killing the vibe. And speaking of bad vibes, you get an alert that the servers are overheating. A total data meltdown would be catastrophic for our online brand presence.",
+                    harlan: "The 'Silent Wednesday' protocol is now in effect. However, a critical alert has been flagged by the IT department. The server farm's temperature has exceeded operational parameters. Action is required.",
+                    dax: "The talking monkeys are quiet, but now the magic thinking boxes are screaming! They are hot with rage! They demand a cooling tribute, or they will die and take the memories with them!",
+                    libby: "The silence in the office is loud, but the hum from the server room is louder. It sings a song of impending doom. The heat is not just physical; it's a psychic scream.",
+                    trent: "It's quiet, which is nice. But now the IT guy is freaking out about the servers being too hot. So that's another thing to deal with."
+                })[char],
+                choices: [
+                    { texts: { default: "Approve the expensive repairs.", abby: "Authorize the emergency expenditure." }, next: 'project_weasel', effects: { finance: -40, morale: 10 } },
+                    { texts: { default: "Tell them to open a window.", dax: "Let the wind-spirits cool the magic boxes." }, next: 'server_meltdown_ending', effects: { finance: 10, reputation: -30 } }
+                ]
+            },
+            leaked_offer_fallout: {
+                title: "Public Outcry",
+                get_text: (char) => ({
+                    abby: "Leaking the offer was a calculated risk. Public reputation is up, a valuable intangible asset. However, NeighRawr Inc. is now launching a smear campaign, which will require a financial response.",
+                    nathaniel: "The story is perfect: 'Hero Intern Saves Company!' We're trending everywhere! NeighRawr Inc. is trying to fight back with negative ads, but they can't compete with this narrative. Our brand is stronger than ever.",
+                    harlan: "The information dissemination strategy was successful. Public sentiment is positive. However, NeighRawr Inc. has initiated retaliatory media actions. The situation remains volatile.",
+                    dax: "The people rally to Dax's banner! They chant his name! The NeighRawr tribe hisses from the shadows, telling lies about Dax, but the people do not listen!",
+                    libby: "The threads of public opinion weave a complex pattern of support. A beautiful tapestry. But NeighRawr Inc. is now trying to unravel it with threads of their own. This is but the first move in the game.",
+                    trent: "So now we're famous, I guess. 'Intern CEO' is a thing. And that other company is mad, so they're making up stuff about us. This is all very dramatic."
+                })[char],
+                choices: [
+                    { texts: { default: "Time for our next move." }, next: 'project_weasel' }
+                ],
+                condition: (stats) => stats.reputation > 70,
+                conditionalNext: 'rival_offer'
+            },
+            rival_offer: {
+                title: "A Tempting Offer",
+                get_text: (char) => ({
+                    'abby': "You get a discreet email from a NeighRawr Inc. executive. They were impressed by your handling of the leak. They're offering you a senior analyst position and a substantial signing bonus... if you 'accidentally' delete a few key ChairForce One databases before you leave.",
+                    'nathaniel': "A recruiter from NeighRawr Inc. slides into your DMs. They love your brand presence. They want you as their new VP of Synergy, with a huge salary. All you have to do is leak ChairForce One's upcoming marketing plans.",
+                    'harlan': "An encrypted message arrives from NeighRawr Inc.'s COO. They respect your ruthless efficiency. They are offering you a position as Director of Operations. Your first task would be to misplace ChairForce One's Q4 logistics manifests.",
+                    'dax': "A man in a cheap suit whispers to Dax from a potted plant. He says his tribe, the NeighRawrs, want Dax as their new warchief. They offer shiny rocks and a lifetime supply of staples. Dax just needs to start a small, symbolic fire in the server room.",
+                    'libby': "You get a call from a blocked number. It's the CEO of NeighRawr Inc. He doesn't say how he got your number. He offers you a job as their 'Strategic Futurist'. He just needs you to tell him the one secret you know will sink ChairForce One.",
+                    'trent': "Some rando from another company emails you. They offer you like, a ton of money for a real job. All you have to do is 'lose' the password to the main ChairForce One social media accounts. Seems like a lot of work."
+                })[char],
+                choices: [
+                    { texts: { default: "Accept their offer and sabotage ChairForce One." }, next: 'rival_betrayal_ending' },
+                    { texts: { default: "Decline. I'm loyal to this weird, chaotic place." }, next: 'project_weasel', effects: { reputation: 10, morale: 10 } },
+                ]
+            },
+            audit_prep: {
+                title: "Incoming!",
+                get_text: (char) => ({
+                    abby: "A new email flashes: 'URGENT: Unscheduled Financial Audit Tomorrow.' Janice from Corporate is coming. This is a code red. An audit is a test of your financial integrity, and you've been... creative.",
+                    nathaniel: "You get an email: 'URGENT: Unscheduled Financial Audit Tomorrow.' Apparently some woman named Janice is coming to check things out. You see this as an opportunity to impress another key stakeholder.",
+                    harlan: "An email arrives flagging an unscheduled financial audit for tomorrow at 0900 hours, to be conducted by a 'Janice' from Corporate. All financial records must be prepared for immediate review.",
+                    dax: "A scroll appears, glowing with red magic! It speaks of a 'Janice' who will come tomorrow to count all of Dax's gold. She is a paper-wizard! A dangerous foe!",
+                    libby: "An email announces an audit for tomorrow. You already knew Janice was coming. You could taste the cheap toner of her audit reports on the air this morning.",
+                    trent: "Got an email. Some lady named Janice is coming tomorrow to look at papers. Sounds boring. Hope I don't have to talk to her."
+                })[char],
+                choices: [
+                    { texts: { default: "Prepare a ridiculously complex presentation.", harlan: "Compile all relevant documentation." }, next: 'project_weasel', effects: { finance: -5, reputation: 5 } },
+                    { texts: { default: "Shred everything that looks like a number.", dax: "Make the paper-secrets into confetti!" }, next: 'project_weasel', effects: { finance: 5, reputation: -15 } },
+                ]
+            },
+            project_weasel: {
+                title: "Project W.E.A.S.E.L.",
+                get_text: (char) => ({
+                    'abby': "An email lands, marked 'CONFIDENTIAL: PROJECT W.E.A.S.E.L.'. The acronym isn't in any of the approved project budget spreadsheets. This is highly irregular and financially concerning.",
+                    'nathaniel': "An email arrives: 'CONFIDENTIAL: PROJECT W.E.A.S.E.L.'. This has the buzz of a killer new brand launch. This could be your chance to really make an impact on the company's image.",
+                    'harlan': "An email is received. Subject: 'CONFIDENTIAL: PROJECT W.E.A.S.E.L.'. Proper protocol dictates that all high-level project briefs must be reviewed by the acting CEO. It is your duty to open it.",
+                    'dax': "An email appears. It says 'PROJECT W.E.A.S.E.L.' Dax knows a side quest when he sees one. The main story can wait. The weasel must be found.",
+                    'libby': "An email arrives: 'CONFIDENTIAL: PROJECT W.E.A.S.E.L.'. You get a sudden, vivid vision of a ferret wearing a tiny jetpack. This can't be good, but you have to know more.",
+                    'trent': "Got a boring-looking email about 'Project Weasel' or something. It's probably work. But maybe it's about a real weasel? That'd be kind of neat."
+                })[char],
+                choices: [
+                    { texts: { default: "Open the email immediately.", harlan: "Review the project brief." }, next: 'open_weasel_file', effects: { morale: -5 } },
+                    { texts: { default: "Ignore it. Sounds like work.", trent: "Nah." }, next: 'ceo_returns_announcement', effects: { morale: 5 } }
+                ]
+            },
+            open_weasel_file: {
+                title: "Product Launch",
+                get_text: (char) => ({
+                    abby: "You open the file. It's a proposal for 'The Burrito Cannon,' a drone-powered delivery system. The potential for property damage, liability lawsuits, and SEC violations is astronomical. This is a terrible, terrible idea.",
+                    nathaniel: "The file opens to reveal 'The Burrito Cannon,' a drone-based burrito delivery system. This is it! It's edgy, it's disruptive, it's the future! The branding possibilities are endless!",
+                    harlan: "The document outlines a proposal for a kinetic, food-based delivery mechanism designated 'The Burrito Cannon'. The proposal is highly unorthodox and fails to meet 17 separate safety and compliance standards.",
+                    dax: "The glowing scroll shows Dax a weapon that fires delicious food tubes from the sky! It is a spear of flavor! Dax must have it! The sky will rain deliciousness for his people!",
+                    libby: "You open the file, and a vision flashes in your mind: a single burrito sailing through the air, followed by a flock of angry seagulls and a fleet of FAA helicopters. The path is clear, if chaotic.",
+                    trent: "So it's like a t-shirt cannon but for burritos. Huh. That's actually kind of cool. Still sounds like a lot of work to manage, though."
+                })[char],
+                choices: [
+                    { texts: { default: "GREENLIGHT THE BURRITO CANNON!", dax: "YES! UNLEASH THE FLESH-WRAPPED FOOD TUBES!" }, next: 'burrito_cannon_fallout', effects: { finance: -40, reputation: 30 } },
+                    { texts: { default: "Shred this madness.", abby: "Deny, due to extreme fiscal risk." }, next: 'ceo_returns_announcement', effects: { finance: 10, reputation: -10 } }
+                ]
+            },
+            burrito_cannon_fallout: {
+                title: "It... Worked?",
+                get_text: (char) => ({
+                    abby: "The Burrito Cannon is a viral hit, temporarily boosting the stock. However, the FAA is now on the phone, and their list of fines is long and expensive. This is an impending financial catastrophe.",
+                    nathaniel: "The Burrito Cannon is a viral sensation! We're the talk of the town! The FAA is calling, but that's just legal getting in the way of great marketing. We can spin this as 'disrupting the airspace industry.'",
+                    harlan: "The launch was a success in terms of public engagement. It has, however, resulted in multiple federal compliance violations. This is a mixed outcome that requires immediate legal mitigation.",
+                    dax: "The sky-burritos were a great victory for the people! Now the Blue Suit tribe from the FAA calls, their words like angry bees. Dax is not scared of bees. He will swat them away!",
+                    libby: "The burrito's flight was true, just as you foresaw. The angry calls from the men in Washington were also part of the vision. A necessary, and predictable, consequence.",
+                    trent: "The burrito thing worked, which is surprising. Now the government is calling non-stop. Of course they are. This is why I don't like doing things."
+                })[char],
+                choices: [
+                    { texts: { default: "Ignore the FAA. We're innovators!", nathaniel: "This is just part of our disruptive brand." }, next: 'ceo_returns_announcement', effects: { reputation: 20, finance: -20 } },
+                    { texts: { default: "Hire expensive lawyers.", abby: "Allocate funds for legal counsel." }, next: 'ceo_returns_announcement', effects: { finance: -30, reputation: -10 } }
+                ]
+            },
+            ceo_returns_announcement: {
+                title: "The CEO Returns",
+                get_text: (char) => ({
+                    abby: "An email from the real CEO. The retreat was a fiscal disaster, and he's returning tomorrow. You have one night to balance the books and hide the... creative accounting. It's going to be a long night of spreadsheet manipulation.",
+                    nathaniel: "The big man is coming back tomorrow. The retreat was a brand-negative experience, apparently. This is your last chance to frame the narrative, to position your chaotic day as a series of strategic wins.",
+                    harlan: "Memo received: The CEO's off-site has been terminated ahead of schedule due to a protocol breach involving a trust fall. He returns tomorrow. All operational reports must be finalized for his review by 0800 hours.",
+                    dax: "The old chieftain returns from his failed spirit quest! He will be here when the sun rises. Dax must prepare the battlefield for the final confrontation! Or maybe build a fort.",
+                    libby: "A new thread appears in the weave. The CEO's journey was cut short by a falling coconut, you sense, not a trust fall. His return tomorrow will be the final knot in this pattern. It is time.",
+                    trent: "Oh, an email from the boss. The retreat sucked, so he's coming back tomorrow. Guess the fun's over. I should probably figure out what I actually did today."
+                })[char],
+                choices: [
+                    { texts: { default: "Prepare a detailed presentation.", harlan: "Compile end-of-day report." }, next: 'final_confrontation', effects: { reputation: 10 } },
+                    { texts: { default: "Shred all the evidence.", dax: "Destroy the proof of Dax's passage!" }, next: 'final_confrontation', effects: { finance: 10, reputation: -10 } },
+                    { texts: { default: "Throw one last, massive office party.", nathaniel: "Host a final networking event.", trent: "Party, I guess." }, next: 'final_confrontation', effects: { morale: 20, finance: -20 } },
+                ]
+            },
+            final_confrontation: {
+                title: "The Confrontation",
+                get_text: (char) => ({
+                    abby: "The CEO storms in, wearing a neck brace. He looks angry. You clutch your profit-and-loss statement like a shield. The numbers will protect you. The numbers have to protect you.",
+                    nathaniel: "Showtime. The CEO is your final, most important audience. Time to sell him on the new, exciting vision for ChairForce One. You flash a winning smile. You've got this.",
+                    harlan: "The CEO has arrived. He appears to be in violation of office safety protocols with that neck brace. You stand at attention, ready to deliver your status report as per standard procedure.",
+                    dax: "The final boss has arrived! He looks weak from his journey. He wears the Brace of Cowardice! Now is Dax's chance to prove he is the true alpha of this corporate jungle!",
+                    libby: "He's here, smelling of airport disinfectant and frustration. The neck brace is from a failed ziplining incident, not a trust fall, you sense. You are ready. You have seen this moment a dozen times already.",
+                    trent: "The boss is back. He looks super cranky. He's staring at me. Should probably say something. Or not. Maybe if I stand still enough he won't see me."
+                })[char],
+                choices: [
+                    { texts: { default: "Explain your bold new strategic vision.", nathaniel: "Present my new brand bible." }, next: 'final_report_ending' },
+                    { texts: { default: "Blame everything on the old management.", dax: "Blame the shadow-men!" }, next: 'final_report_ending' },
+                    { texts: { default: "Show him the numbers.", abby: "Present the preliminary P&L statement." }, next: 'final_report_ending' }
+                ]
+            },
+            // --- ENDINGS ---
+            final_report_ending: {
+                title: "The Verdict",
+                get_text: (char) => {
+                    const avg = (stats.reputation + stats.morale + stats.finance) / 3;
+                    const endings = {
+                        win: {
+                            abby: "He stares at your profit-and-loss statement, utterly bewildered. 'The numbers... they're incredible,' he mutters. 'You're promoted. I don't understand it, but I respect it.'",
+                            nathaniel: "He sees the positive press clippings and the vibrant office atmosphere. 'You've... you've rebranded us,' he says, a slow smile spreading on his face. 'Welcome to the team, son. You're our new VP of Vibes.'",
+                            harlan: "He reviews your meticulously compiled report, nodding slowly. 'Order from chaos. Unprecedented efficiency. You've streamlined the entire company. You have a permanent position, effective immediately.'",
+                            dax: "The CEO looks at the chaos, then at the soaring profits, then back at the chaos. He does not understand. 'Dax has brought glory!' you shout. The CEO sighs and hands you a new keycard. 'Just... don't break anything else,' he says. Dax has won.",
+                            libby: "He's about to speak, but you interrupt. 'I know what you're going to say. And yes, I accept the promotion.' He stares, speechless. Your clairvoyance is as unnerving as it is profitable.",
+                            trent: "He looks at the mess. 'What happened here?' he asks. You shrug. 'Dunno.' He then looks at a report showing employee satisfaction is at an all-time high. He sighs. 'Fine, you're hired. Whatever. Just try to care a little.'"
+                        },
+                        lose: {
+                            abby: "He glances at your expense reports and his eye twitches. 'The numbers... what have you done to my numbers?!' he whispers in horror. 'Get out.' Security escorts you from the building.",
+                            nathaniel: "He looks at the PR disaster you've created. 'My brand...' he says, his voice cracking. 'You've destroyed my beautiful brand!' You are thrown out.",
+                            harlan: "He points a trembling finger at a slightly misaligned stapler on the desk. 'This... this is unacceptable,' he says, his voice dangerously quiet. 'You have failed to maintain protocol. Leave.'",
+                            dax: "The CEO does not understand Dax's beautiful chaos. He calls for his guards. Dax is cast out, but Dax knows... one day, he will return to claim his throne.",
+                            libby: "He opens his mouth to fire you, but you simply nod. 'I know. It's alright. This was not the correct timeline anyway.' You walk out before he can say another word, leaving him in stunned silence.",
+                            trent: "He glances at the half-finished work on your desk. 'Did you do anything today?' he asks. You shrug. He sighs. 'Get out.' So that happened."
+                        },
+                        neutral: {
+                            abby: "He reviews your financial reports. 'These are... confusing, but not catastrophic. Go back to your desk. And never touch my calculator again.'",
+                            nathaniel: "He looks at the mixed press. 'You're a loose cannon, but you've got buzz. I'm... intrigued. Go back to your cubicle. We'll talk.'",
+                            harlan: "He looks around. 'The office is... cleaner. But morale is in the toilet. A mixed result. Return to your station. Your performance review will be... extensive.'",
+                            dax: "The chieftain is confused by Dax's works. He does not see the genius. 'Go,' he says, pointing a finger. 'Think about what you've done.' Dax will think about lunch.",
+                            libby: "He sighs, looking at the strange new energy in the office. 'I don't know what happened here, and I'm not sure I want to. Just... go away for a while.'",
+                            trent: "He looks at you. You look back. It's a stalemate. 'Just... go back to your desk,' he says, defeated. 'And don't touch anything.' Ok."
+                        }
+                    };
+                    if (avg > 65) return endings.win[char] || endings.win.default;
+                    if (avg < 35) return endings.lose[char] || endings.lose.default;
+                    return endings.neutral[char] || endings.neutral.default;
+                },
+                choices: [{ texts: { default: "It's finally over." }, next: 'start' }]
+            },
+            rival_betrayal_ending: {
+                title: "GAME OVER: The Betrayal", get_text: (char) => ({
+                    'abby': "The wire transfer from NeighRawr Inc. clears almost instantly. It was a logical, profitable decision. You've already updated your LinkedIn profile with your new, higher-paying title. Emotion is a liability; assets are forever.",
+                    'nathaniel': "You walk out of ChairForce One, phone already buzzing with calls from your new executive assistant at NeighRawr Inc. It was never about loyalty, it was about brand alignment. And your brand is on the rise.",
+                    'harlan': "Your transition to NeighRawr Inc. is seamless. They appreciate your adherence to the terms of the agreement. Sabotaging ChairForce One was simply the final task in your previous role, executed with maximum efficiency.",
+                    'dax': "Dax has joined the NeighRawr tribe! They gave him a shiny new key card. Dax left a gift for the Chair-Folk: a single, mysterious potato on the CEO's desk. The legend of Dax continues in a new land!",
+                    'libby': "You saw this outcome in the steam from your tea this morning. The betrayal, the new job, the surprisingly large signing bonus. It feels less like a choice and more like keeping an appointment with fate.",
+                    'trent': "So you got a new job. The pay is way better. You had to, like, drag a file to the trash can on your way out. Easy. Now you can finally buy that new graphics card."
+                })[char], choices: [{ texts: { default: "Start a new life." }, next: 'start' }]
+            },
+            mandatory_fun_ending: {
+                title: "VICTORY?: Mandatory Fun",
+                get_text: (char) => ({
+                    abby: "The numbers are a mess. The initiative was a net loss, but inexplicably, the company's stock rose due to 'unquantifiable brand goodwill.' You hate it, but you technically succeeded.",
+                    nathaniel: "It was a disaster, but it was a viral disaster. The company looks fun and chaotic. You're a marketing genius who understands that even bad press is good press.",
+                    harlan: "The event was disorganized and breached multiple HR protocols. However, employee retention metrics improved by 12%. The outcome is a success, despite the procedural failures.",
+                    dax: "Dax's 'Trial of Joy' has ended. The weak are crying, but the strong are laughing. A video of Dax doing a trust fall with the janitor has made the company famous. Dax is hailed as a king.",
+                    libby: "You saw a vision of this. Forced smiles turning into genuine laughter. It made no logical sense, but the emotional energy of the company shifted for the better. A strange victory.",
+                    trent: "The party was kinda lame, but then a video of it went viral on TikTok. The company is famous, I guess. The CEO seems happy, so whatever."
+                })[char],
+                choices: [{ texts: { default: "I guess I'll take it." }, next: 'start' }]
+            },
+            server_meltdown_ending: {
+                title: "GAME OVER: Server Meltdown",
+                get_text: (char) => ({
+                    abby: "Telling them to 'open a window' was not a fiscally sound solution. The servers are fried, the data is gone, and the cost to recover it will be astronomical. This is your greatest failure.",
+                    nathaniel: "The servers crashed, taking the company website and all social media with it. The brand is literally offline. This is the opposite of synergy. You are a failure.",
+                    harlan: "Failure to follow proper IT infrastructure maintenance protocols has resulted in a catastrophic data loss event. This is a complete systemic breakdown. Unacceptable.",
+                    dax: "The magic thinking boxes became too hot and died. Their tiny souls have flown away. Dax has failed the boxes. Dax is sad.",
+                    libby: "You felt the heat from the server room all morning, a premonition of digital death. You should have trusted the vision. The company's memory has been erased.",
+                    trent: "So the internet is broken. Like, for the whole company. My bad. The IT guy is crying. This seems not good."
+                })[char],
+                choices: [{ texts: { default: "Try Again?" }, next: 'start' }]
+            },
+            delete_email_ending: {
+                title: "Ignorance is Bliss",
+                get_text: (char) => ({
+                    abby: "Project W.E.A.S.E.L. was an unbudgeted, high-risk venture. Ignoring it was the most fiscally responsible decision. You leave at 5 PM, having successfully avoided a potential financial disaster.",
+                    nathaniel: "That email had bad vibes. No brand potential at all. You made the right call to ignore it and focus on what matters: your own personal brand. You grab a bagel and call it a day.",
+                    harlan: "The email lacked a proper project proposal header. It was non-compliant. Deleting it was the only correct procedural action. You have maintained order.",
+                    dax: "The weasel quest was probably a trap. Dax is wise. Dax will find his own quests. Dax will now go on a quest for snacks.",
+                    libby: "The threads of fate around that email were tangled and dark. It was wise to snip that one from the loom. The timeline is safer now. You get a bagel, a sense of peace washing over you.",
+                    trent: "That email looked like work. I'm not getting paid enough for work. I'm getting paid enough for bagels. So I got a bagel."
+                })[char],
+                choices: [{ texts: { default: "Play Again?" }, next: 'start' }]
+            },
+
+            bankruptcy_ending: {
+                title: "GAME OVER: Bankruptcy", get_text: (char) => ({
+                    'abby': "The company's accounts are empty. Your worst nightmare. The numbers are red. You failed your one job. You feel a deep, personal shame that no spreadsheet can quantify.",
+                    'nathaniel': "The money's gone. No money, no parties, no brand. Your brief, shining moment as a corporate rockstar is over. You're just another guy with a great smile and a terrible resume.",
+                    'harlan': "Financial solvency has reached zero. This is an unacceptable operational failure. The system has broken down. Protocol has been violated on a catastrophic level.",
+                    'dax': "The gold is gone. The dragon's hoard is empty. Dax fought the beast of finance and lost. But the legend of Dax's spending spree will live on forever.",
+                    'libby': "The accounts dried up, just as you saw they would when the barista scanned that invoice. A sad, predictable end to a chaotic day.",
+                    'trent': "So the company is broke. Does this mean I don't get paid for today? Bummer. The real CEO is going to be so mad."
+                })[char], choices: [{ texts: { default: "Try Again?" }, next: 'start' }]
+            },
+            mutiny_ending: {
+                title: "GAME OVER: Employee Mutiny", get_text: (char) => ({
+                    'abby': "The employees have revolted. Their grievances are varied, but the fiscal chaos you caused is a recurring theme. You've become a liability.",
+                    'nathaniel': "The crowd has turned on you. Your charisma has its limits, it turns out. They're chanting about your terrible decisions. This is a PR nightmare you can't spin.",
+                    'harlan': "Employee morale has dropped below acceptable parameters, resulting in organized insurrection. A complete breakdown of decorum. You are being escorted out by security.",
+                    'dax': "The villagers have come for Dax with pitchforks and angry memos. They do not understand his vision. Dax will escape to the wilderness to plot his return.",
+                    'libby': "You could feel the mutiny brewing for hours. The whispers, the angry typing. You tried to warn them, but some things you just have to let happen.",
+                    'trent': "Whoa, everyone is super mad. They're like, a real mob. I'm just gonna go. This job is not worth getting a stapler thrown at me."
+                })[char], choices: [{ texts: { default: "Try Again?" }, next: 'start' }]
+            },
+            pr_disaster_ending: {
+                title: "GAME OVER: PR Disaster", get_text: (char) => ({
+                    'abby': "The company's reputation is in shambles. The stock price has plummeted. This is a financial catastrophe precipitated by social miscalculations. A costly, embarrassing error.",
+                    'nathaniel': "The brand is toxic. You, the ultimate brand ambassador, have become poison. Your face is synonymous with failure. There's no coming back from this.",
+                    'harlan': "The public perception of ChairForce One has fallen outside of acceptable brand safety guidelines. Your management has resulted in a quantifiable reputational deficit.",
+                    'dax': "The world hates Dax. But they are talking about Dax. Is this not a victory of a kind? The wise men in suits do not think so. They are sending Dax away.",
+                    'libby': "The reputational collapse was inevitable from the moment you considered that tweet. You saw the headlines. You just hoped you were wrong this time.",
+                    'trent': "The company is a meme now. But in a bad way. The real CEO just texted you a string of furious emojis. I think I'm fired."
+                })[char], choices: [{ texts: { default: "Try Again?" }, next: 'start' }]
+            },
+            finance_victory_ending: {
+                title: "VICTORY: Financial Mastermind", get_text: (char) => ({
+                    'abby': "You did it. The books are balanced, the profits are astronomical. You've made ChairForce One so profitable, you just bought out NeighRawr Inc. with petty cash. This is the most beautiful spreadsheet you've ever seen.",
+                    'nathaniel': "The company is rolling in money, which means bigger marketing budgets and better parties. You're a legend, a visionary who proved that a good time is good business.",
+                    'harlan': "Financial solvency is at 100%. All departments are operating with maximum efficiency. The system is perfect. This is the successful outcome the protocols were designed to achieve.",
+                    'dax': "Dax has found the dragon's treasure! So much gold! Dax will build a throne of gold on top of a mountain of gold. All will hail Dax, the Gold-King!",
+                    'libby': "You knew that investing in the pet rock scheme was the right move. The numbers aligned, just like you saw in your coffee foam this morning. The company is saved.",
+                    'trent': "Oh, wow. We're like, super rich now. The CEO just called and offered me a real job with a 401k and stuff. Cool. Maybe I can buy two video games."
+                })[char], choices: [{ texts: { default: "Play Again?" }, next: 'start' }]
+            },
+            morale_victory_ending: {
+                title: "VICTORY: Workplace Utopia", get_text: (char) => ({
+                    'abby': "Employee morale is at 100%. While the financial cost was... significant, the gains in productivity and loyalty are off the charts. The numbers work out. You've created an efficient, happy workforce.",
+                    'nathaniel': "The office is a paradise of good vibes and happy people. Everyone loves you. You're not just a CEO; you're the life of the corporate party. This is the ultimate networking success.",
+                    'harlan': "Employee satisfaction is at maximum. All personnel are operating in a state of optimal contentment, leading to increased productivity. The human system is functioning perfectly.",
+                    'dax': "The people love Dax! They cheer his name in the halls. They bring him offerings of snacks. Dax is a good king. A weird king, but a good king.",
+                    'libby': "The collective consciousness of the office is a harmonious song. You can feel the contentment on a psychic level. It's... peaceful. You knew they just needed a four-day workweek.",
+                    'trent': "Everyone here is super happy, which is weird for an office. They all wanna hang out after work. It's kind of cool, I guess. I got everyone to play videogames at lunch."
+                })[char], choices: [{ texts: { default: "Play Again?" }, next: 'start' }]
+            },
+            reputation_victory_ending: {
+                title: "VICTORY: Global Icon", get_text: (char) => ({
+                    'abby': "The company's public image is flawless. This translates to a 20% increase in stock value. The reputational assets have been maximized for incredible financial gain. A perfect outcome.",
+                    'nathaniel': "The ChairForce One brand is more beloved than puppies. Your face is on magazine covers. You are the icon you always knew you were. Your personal brand is now a global superpower.",
+                    'harlan': "The brand's public approval rating is at 100%. All media mentions are positive. The company is a model of corporate responsibility and public trust. The standard has been set.",
+                    'dax': "The world chants the name of Dax! Statues of Dax are built in the town square! He is a hero to the people, a legend in his own time, which is now!",
+                    'libby': "You saw this path. A single tweet about cheese, a leaked memo... it all led here. The public adores the company. It's a strange, beautiful timeline you've guided them to.",
+                    'trent': "Apparently the company is super popular now. My TikTok about being the intern-CEO went viral. The real CEO wants me to be their new spokesperson. So that happened."
+                })[char], choices: [{ texts: { default: "Play Again?" }, next: 'start' }]
+            },
+        };
+
+        function renderCharacterSelection() {
+            charGridEl.innerHTML = '';
+            for (const key in characters) {
+                const char = characters[key];
+                const card = document.createElement('div');
+                card.className = 'character-card bg-slate-700 p-6 rounded-lg cursor-pointer';
+                card.dataset.charKey = key;
+                let modsHTML = Object.entries(char.mods).filter(([_, val]) => val !== 0).map(([stat, val]) => `<span class="stat-mod ${val > 0 ? 'stat-mod-pos' : 'stat-mod-neg'}">${val > 0 ? '+' : ''}${val} ${stat.charAt(0).toUpperCase() + stat.slice(1)}</span>`).join(', ');
+                card.innerHTML = `<h3 class="text-2xl font-bold text-white mb-2">${char.name}</h3><p class="text-gray-300 mb-4">${char.desc}</p><p class="text-sm">${modsHTML || 'Balanced Start'}</p>`;
+                card.addEventListener('click', () => selectCharacter(key));
+                charGridEl.appendChild(card);
+            }
+        }
+
+        function selectCharacter(key) {
+            selectedCharacterKey = key;
+            startGame();
+        }
+
+        function initializeGame() {
+            flags = {};
+            currentState = 'title_screen';
+            gamePlayWindow.style.display = 'block';
+            charSelectionWindow.style.display = 'none';
+            renderScene();
+        }
+
+        function showCharacterSelect() {
+            gamePlayWindow.style.display = 'none';
+            charSelectionWindow.style.display = 'block';
+            renderCharacterSelection();
+        }
+
+        function startGame() {
+            const charMods = characters[selectedCharacterKey].mods;
+            stats = {
+                reputation: 50 + charMods.reputation,
+                morale: 50 + charMods.morale,
+                finance: 50 + charMods.finance
+            };
+            currentState = 'start_game';
+            gamePlayWindow.style.display = 'block';
+            charSelectionWindow.style.display = 'none';
+            charDisplayEl.innerHTML = `<h2 class="text-2xl font-bold text-sky-400">Playing as: ${characters[selectedCharacterKey].name}</h2>`;
+            updateStatsDisplay();
+            renderScene();
+        }
+
+        function updateStatsDisplay() {
+            statsContainerEl.innerHTML = `<div class="stat-item"><div class="flex justify-between items-center mb-1"><span class="text-sm font-bold text-gray-300">Reputation</span><span class="text-sm font-bold text-blue-400">${stats.reputation}/100</span></div><div class="w-full bg-gray-600 rounded-full h-2.5"><div class="bg-blue-500 h-2.5 rounded-full stat-bar" style="width: ${stats.reputation}%"></div></div></div><div class="stat-item"><div class="flex justify-between items-center mb-1"><span class="text-sm font-bold text-gray-300">Morale</span><span class="text-sm font-bold text-green-400">${stats.morale}/100</span></div><div class="w-full bg-gray-600 rounded-full h-2.5"><div class="bg-green-500 h-2.5 rounded-full stat-bar" style="width: ${stats.morale}%"></div></div></div><div class="stat-item"><div class="flex justify-between items-center mb-1"><span class="text-sm font-bold text-gray-300">Finance</span><span class="text-sm font-bold text-red-400">${stats.finance}/100</span></div><div class="w-full bg-gray-600 rounded-full h-2.5"><div class="bg-red-500 h-2.5 rounded-full stat-bar" style="width: ${stats.finance}%"></div></div></div>`;
+        }
+
+        function renderScene() {
+            let scene = story[currentState];
+            if (!scene) return console.error("Scene not found:", currentState);
+
+            // Handle conditional scene transition
+            if (scene.condition && scene.condition(stats) && !flags[`conditional_${currentState}`]) {
+                flags[`conditional_${currentState}`] = true; // prevent re-triggering
+                currentState = scene.conditionalNext;
+                scene = story[currentState];
+            }
+
+            statsContainerEl.style.display = (currentState.includes('ending') || currentState === 'title_screen') ? 'none' : 'block';
+            charDisplayEl.style.display = (currentState.includes('ending') || currentState === 'title_screen') ? 'none' : 'block';
+
+            storyContentEl.innerHTML = '';
+            choicesContainerEl.innerHTML = '';
+
+            const titleEl = document.createElement('h2');
+            titleEl.className = 'text-3xl md:text-4xl font-bold text-white mb-4';
+            titleEl.textContent = scene.title;
+            storyContentEl.appendChild(titleEl);
+
+            const textEl = document.createElement('p');
+            textEl.className = 'text-lg text-gray-300';
+            textEl.textContent = scene.get_text(selectedCharacterKey);
+            storyContentEl.appendChild(textEl);
+
+            const addChoice = (choice, isChaos = false) => {
+                const button = document.createElement('button');
+                button.className = `choice-button w-full md:w-auto text-white font-bold py-3 px-6 rounded-lg ${isChaos ? 'chaos-button' : 'bg-slate-700 hover:bg-slate-600'}`;
+
+                let buttonText = choice.texts[selectedCharacterKey] || choice.texts.default;
+
+                if (characters[selectedCharacterKey]?.isClairvoyant && choice.effects) {
+                    let effectsString = Object.entries(choice.effects).map(([key, value]) => {
+                        const sign = value >= 0 ? '+' : '';
+                        const initial = key.charAt(0).toUpperCase();
+                        const colorClass = value >= 0 ? 'stat-mod-pos' : 'stat-mod-neg';
+                        return `<span class="${colorClass}">(${sign}${value} ${initial})</span>`;
+                    }).join(' ');
+                    button.innerHTML = `${buttonText} <span class="libby-effect">${effectsString}</span>`;
+                } else {
+                    button.textContent = buttonText;
+                }
+
+                button.dataset.next = choice.next;
+                if (choice.effects) button.dataset.effects = JSON.stringify(choice.effects);
+                button.addEventListener('click', handleChoice);
+                choicesContainerEl.appendChild(button);
+            };
+
+            if (scene.choices) scene.choices.forEach(choice => addChoice(choice));
+            if (scene.chaosChoice && characters[selectedCharacterKey]?.isChaos) addChoice(scene.chaosChoice, true);
+        }
+
+        function checkGameStatus() {
+            if (stats.finance <= 0) { currentState = 'bankruptcy_ending'; return true; }
+            if (stats.morale <= 0) { currentState = 'mutiny_ending'; return true; }
+            if (stats.reputation <= 0) { currentState = 'pr_disaster_ending'; return true; }
+            if (stats.finance >= 100) { currentState = 'finance_victory_ending'; return true; }
+            if (stats.morale >= 100) { currentState = 'morale_victory_ending'; return true; }
+            if (stats.reputation >= 100) { currentState = 'reputation_victory_ending'; return true; }
+            return false;
+        }
+
+        function handleChoice(event) {
+            const button = event.currentTarget;
+            const nextSceneId = button.dataset.next;
+
+            if (nextSceneId === 'start') return initializeGame();
+            if (nextSceneId === 'show_character_select') return showCharacterSelect();
+
+            const effects = button.dataset.effects;
+            if (effects) {
+                const parsedEffects = JSON.parse(effects);
+                for (const key in parsedEffects) {
+                    stats[key] = Math.max(0, Math.min(100, stats[key] + parsedEffects[key]));
+                }
+                updateStatsDisplay();
+            }
+
+            if (checkGameStatus()) {
+                setTimeout(renderScene, 500);
+                return;
+            }
+
+            if (story[nextSceneId]) {
+                currentState = nextSceneId;
+                setTimeout(renderScene, 500);
+            } else {
+                console.error(`Story scene "${nextSceneId}" not found!`);
+            }
+        }
+
+        window.onload = initializeGame;
+    </script>
+</body>
+
+</html>
