@@ -1,0 +1,2058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Midnight Unmasking at Blackwood Manor</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Spectral:ital,wght@0,400;0,500;1,400&display=swap');
+
+    :root {
+      --autumn-bg: #140d0b;
+      --autumn-deep-brown: #231612;
+      --autumn-card: #2e1e19;
+      --autumn-card-inner: #1c120f;
+      --autumn-amber: #d97736;
+      --autumn-gold: #c8963e;
+      --autumn-burgundy: #5c1d24;
+      --autumn-burgundy-hover: #782730;
+      --autumn-forest: #1e3323;
+      --autumn-forest-hover: #2b4731;
+      --autumn-border: #4d3329;
+      --autumn-border-highlight: #8c5d43;
+      --autumn-text: #ebdcd0;
+      --autumn-text-muted: #b59f93;
+      --font-display: 'Cinzel', serif;
+      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-body: 'Spectral', 'Baskerville', serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: radial-gradient(circle at 50% 20%, #291813 0%, #120a08 100%);
+      color: var(--autumn-text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    #leaves-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .link-home {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      z-index: 1000;
+      display: inline-block;
+      background: rgba(35, 22, 18, 0.9);
+      border: 1px solid var(--autumn-border);
+      color: var(--autumn-gold);
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-family: var(--font-display);
+      font-size: 0.78rem;
+      letter-spacing: 1.5px;
+      text-decoration: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    .link-home:hover {
+      background: var(--autumn-burgundy);
+      border-color: var(--autumn-gold);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .game-container {
+      position: relative;
+      z-index: 3;
+      width: 100%;
+      max-width: 1080px;
+      background: var(--autumn-card);
+      border: 1px solid var(--autumn-border);
+      border-radius: 8px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      min-height: 740px;
+      overflow: hidden;
+    }
+
+    header {
+      background: var(--autumn-deep-brown);
+      color: var(--autumn-text);
+      padding: 18px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--autumn-burgundy);
+    }
+
+    header h1 {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      color: var(--autumn-gold);
+      text-transform: uppercase;
+    }
+
+    .status-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      background: rgba(18, 10, 8, 0.7);
+      border: 1px solid var(--autumn-border);
+      color: var(--autumn-text);
+      padding: 5px 12px;
+      border-radius: 3px;
+      font-size: 0.78rem;
+      font-family: var(--font-display);
+      letter-spacing: 0.8px;
+    }
+
+    .badge.timer {
+      border-color: var(--autumn-amber);
+      color: var(--autumn-amber);
+      font-weight: bold;
+    }
+
+    .badge.lives {
+      border-color: #8c2d19;
+      color: #ff7b88;
+      font-weight: bold;
+    }
+
+    .badge.progress {
+      border-color: var(--autumn-gold);
+      color: var(--autumn-gold);
+    }
+
+    .screen { display: none; padding: 32px; flex: 1; }
+    .screen.active { display: flex; flex-direction: column; }
+
+    .intro-heading {
+      font-family: var(--font-display);
+      color: var(--autumn-gold);
+      font-size: 1.4rem;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    .intro-desc {
+      color: var(--autumn-text-muted);
+      font-size: 0.98rem;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .char-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .char-card {
+      background: var(--autumn-card-inner);
+      border: 1px solid var(--autumn-border);
+      border-radius: 6px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .char-card:hover {
+      border-color: var(--autumn-amber);
+      transform: translateY(-2px);
+    }
+
+    .char-card.selected {
+      border-color: var(--autumn-gold);
+      background: rgba(92, 29, 36, 0.4);
+      box-shadow: inset 0 0 12px rgba(200, 150, 62, 0.2);
+    }
+
+    .char-card h3 {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      color: var(--autumn-gold);
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+    }
+
+    .char-card .persona-tag {
+      font-size: 0.8rem;
+      color: var(--autumn-amber);
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+
+    .details-box {
+      background: var(--autumn-card-inner);
+      border: 1px solid var(--autumn-border);
+      border-radius: 6px;
+      padding: 24px;
+      margin-bottom: 24px;
+      min-height: 150px;
+    }
+
+    .details-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      color: var(--autumn-gold);
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .details-quote {
+      font-style: italic;
+      color: var(--autumn-text-muted);
+      margin-bottom: 12px;
+      border-left: 3px solid var(--autumn-burgundy);
+      padding-left: 12px;
+    }
+
+    .details-field {
+      font-size: 0.92rem;
+      line-height: 1.6;
+      margin-bottom: 6px;
+    }
+
+    .details-field strong {
+      color: var(--autumn-amber);
+    }
+
+    .mode-row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 14px 18px;
+      background: var(--autumn-card-inner);
+      border: 1px solid var(--autumn-border);
+      border-radius: 6px;
+    }
+
+    .mode-label {
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      color: var(--autumn-gold);
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 20px;
+    }
+
+    .radio-group label {
+      cursor: pointer;
+      font-size: 0.92rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .room-stage {
+      display: grid;
+      grid-template-columns: 1fr 310px;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .room-main {
+      background: var(--autumn-card-inner);
+      border: 1px solid var(--autumn-border);
+      border-radius: 6px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .room-header {
+      border-bottom: 1px solid var(--autumn-border);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .room-breadcrumb {
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      letter-spacing: 1.5px;
+      color: var(--autumn-amber);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .room-title {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      color: var(--autumn-gold);
+      letter-spacing: 1.5px;
+    }
+
+    .room-desc {
+      color: var(--autumn-text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-top: 6px;
+    }
+
+    .room-content {
+      flex: 1;
+      margin-bottom: 20px;
+      overflow-y: auto;
+      max-height: 380px;
+    }
+
+    .encounter-panel {
+      background: rgba(35, 22, 18, 0.7);
+      border: 1px solid var(--autumn-border);
+      border-radius: 6px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .encounter-title {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      color: var(--autumn-amber);
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .dialogue-text {
+      font-style: italic;
+      line-height: 1.6;
+      color: var(--autumn-text);
+      margin-bottom: 12px;
+    }
+
+    .action-btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .doors-panel {
+      background: var(--autumn-deep-brown);
+      border-top: 1px solid var(--autumn-border);
+      padding-top: 16px;
+    }
+
+    .doors-title {
+      font-family: var(--font-display);
+      font-size: 0.8rem;
+      letter-spacing: 1.5px;
+      color: var(--autumn-text-muted);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .doors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .dossier-panel {
+      background: var(--autumn-card-inner);
+      border: 1px solid var(--autumn-border);
+      border-radius: 6px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .panel-heading {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      color: var(--autumn-gold);
+      letter-spacing: 1px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--autumn-border);
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .suspect-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      max-height: 270px;
+      margin-bottom: 14px;
+    }
+
+    .suspect-row {
+      background: var(--autumn-deep-brown);
+      border: 1px solid var(--autumn-border);
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .suspect-row:hover {
+      border-color: var(--autumn-amber);
+    }
+
+    .suspect-row.unmasked {
+      border-left: 3px solid var(--autumn-gold);
+      background: rgba(45, 25, 20, 0.9);
+    }
+
+    .suspect-row.unmasked:hover {
+      border-color: var(--autumn-gold);
+      box-shadow: 0 0 8px rgba(200, 150, 62, 0.25);
+    }
+
+    .unmask-badge {
+      font-size: 0.72rem;
+      font-family: var(--font-display);
+      letter-spacing: 0.5px;
+      color: var(--autumn-text-muted);
+    }
+
+    .unmask-badge.done {
+      color: var(--autumn-gold);
+    }
+
+    .forensic-log-box {
+      background: rgba(18, 10, 8, 0.8);
+      border: 1px dashed var(--autumn-amber);
+      padding: 10px 12px;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      margin-bottom: 12px;
+      color: var(--autumn-text);
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    button {
+      background: var(--autumn-deep-brown);
+      color: var(--autumn-text);
+      border: 1px solid var(--autumn-border);
+      padding: 9px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: var(--font-display);
+      font-size: 0.78rem;
+      letter-spacing: 1px;
+      transition: all 0.15s ease;
+    }
+
+    button:hover:not(:disabled) {
+      border-color: var(--autumn-gold);
+      background: var(--autumn-burgundy);
+      color: #ffffff;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      border-color: #38241d;
+      background: #19100e !important;
+      color: #7a685f !important;
+    }
+
+    .btn-burgundy {
+      background: var(--autumn-burgundy);
+      color: #ffffff;
+      border-color: var(--autumn-burgundy);
+    }
+
+    .btn-burgundy:hover:not(:disabled) {
+      background: var(--autumn-burgundy-hover);
+      border-color: var(--autumn-gold);
+    }
+
+    .btn-forest {
+      background: var(--autumn-forest);
+      color: #ffffff;
+      border-color: var(--autumn-forest);
+    }
+
+    .btn-forest:hover:not(:disabled) {
+      background: var(--autumn-forest-hover);
+      border-color: var(--autumn-gold);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(14, 8, 7, 0.85);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      z-index: 1500;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal-box {
+      background: var(--autumn-card);
+      border: 1px solid var(--autumn-gold);
+      border-radius: 6px;
+      max-width: 520px;
+      width: 100%;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    }
+
+    .modal-box h2 {
+      font-family: var(--font-display);
+      color: var(--autumn-gold);
+      font-size: 1.15rem;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+
+    .modal-box p {
+      color: var(--autumn-text);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .modal-box input {
+      width: 100%;
+      background: var(--autumn-card-inner);
+      border: 1px solid var(--autumn-border);
+      color: var(--autumn-text);
+      padding: 10px 12px;
+      border-radius: 4px;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      margin-bottom: 14px;
+    }
+
+    .modal-box input:focus {
+      outline: none;
+      border-color: var(--autumn-gold);
+    }
+
+    .hint-container {
+      background: rgba(18, 10, 8, 0.7);
+      border-left: 3px solid var(--autumn-amber);
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      font-size: 0.88rem;
+      font-style: italic;
+      color: var(--autumn-text-muted);
+    }
+
+    .end-container {
+      max-width: 820px;
+      margin: 0 auto;
+      background: var(--autumn-card-inner);
+      border: 1px solid var(--autumn-gold);
+      border-radius: 6px;
+      padding: 40px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+    }
+
+    .end-title {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      color: var(--autumn-gold);
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .end-body {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--autumn-text);
+      margin-bottom: 24px;
+    }
+
+    .end-quote {
+      background: rgba(35, 22, 18, 0.6);
+      border-left: 3px solid var(--autumn-burgundy);
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <a class="link-home" href="index.html">HOME PAGE</a>
+  <canvas id="leaves-canvas"></canvas>
+
+  <div class="game-container">
+    <header>
+      <h1>The Midnight Unmasking</h1>
+      <div class="status-bar">
+        <span class="badge lives" id="hud-lives">Lives: 3</span>
+        <span class="badge progress" id="hud-progress">Wing 1 of 10</span>
+        <span class="badge" id="hud-identity">Guest: None</span>
+        <span class="badge timer" id="hud-timer">Time: Untimed</span>
+        <span class="badge" id="hud-cross">Interviews: 4 Left</span>
+      </div>
+    </header>
+
+    <!-- SCREEN 1: CHARACTER SELECTION -->
+    <div id="screen-select" class="screen active">
+      <h2 class="intro-heading">Select Your Masquerade Persona</h2>
+      <p class="intro-desc">Lord Richard Sterling-Cross was slain at 11:58 PM during the All Hallows' Eve gala. <em>"All the world's a stage, and all the men and women merely players..."</em> Explore the ten wings of Blackwood Manor to unmask all suspects, crack puzzle-locked forensic evidence, and accuse the true killer before the midnight bells toll.</p>
+
+      <div class="char-grid">
+        <div class="char-card" onclick="highlightChar('beatrice')">
+          <h3>The Moonlit Marionette</h3>
+          <div class="persona-tag">Lady Disdain</div>
+          <div style="font-size:0.75rem; color:var(--autumn-text-muted);">Porcelain Disguise</div>
+        </div>
+
+        <div class="char-card" onclick="highlightChar('benedick')">
+          <h3>The Velvet Minotaur</h3>
+          <div class="persona-tag">Disowned Kinsman</div>
+          <div style="font-size:0.75rem; color:var(--autumn-text-muted);">Horned Disguise</div>
+        </div>
+
+        <div class="char-card" onclick="highlightChar('bertram')">
+          <h3>The Clockwork Doctor</h3>
+          <div class="persona-tag">Disgraced Physician</div>
+          <div style="font-size:0.75rem; color:var(--autumn-text-muted);">Beaked Disguise</div>
+        </div>
+
+        <div class="char-card" onclick="highlightChar('helena')">
+          <h3>The Gilded Crow</h3>
+          <div class="persona-tag">Antiquities Appraiser</div>
+          <div style="font-size:0.75rem; color:var(--autumn-text-muted);">Feathered Disguise</div>
+        </div>
+
+        <div class="char-card" onclick="highlightChar('rosalind')">
+          <h3>The Golden Harlequin</h3>
+          <div class="persona-tag">Radical Pamphleteer</div>
+          <div style="font-size:0.75rem; color:var(--autumn-text-muted);">Diamond Disguise</div>
+        </div>
+      </div>
+
+      <div class="details-box" id="bio-summary">
+        <div class="details-title" style="color:var(--autumn-text-muted); font-size:1rem;">No Character Selected</div>
+        <p style="color:var(--autumn-text-muted); font-style:italic;">Select a guest above to review their history, motive, and specific masquerade ability.</p>
+      </div>
+
+      <div class="mode-row">
+        <span class="mode-label">Investigation Tier:</span>
+        <div class="radio-group">
+          <label><input type="radio" name="diff" value="easy" checked onchange="updateModeDesc()" /> Casual (3 Lives, Untimed)</label>
+          <label><input type="radio" name="diff" value="medium" onchange="updateModeDesc()" /> Gala (2 Lives, 25m Clock)</label>
+          <label><input type="radio" name="diff" value="hard" onchange="updateModeDesc()" /> Gallows (1 Life, 15m Clock, Penalties)</label>
+        </div>
+      </div>
+
+      <button id="btn-start" class="btn-burgundy" style="width:100%; padding:14px; font-size:0.85rem;" disabled onclick="startGame()">Commence Investigation</button>
+    </div>
+
+    <!-- SCREEN 2: MAIN PLAY SCREEN -->
+    <div id="screen-game" class="screen">
+      <div class="room-stage">
+        <div class="room-main">
+          <div>
+            <div class="room-header">
+              <div class="room-breadcrumb" id="room-step">Wing 1 of 10</div>
+              <div class="room-title" id="room-name">The Grand Ballroom</div>
+              <div class="room-desc" id="room-desc">Flickering gas sconces cast amber shadows over spilled vintage and shattered crystal.</div>
+            </div>
+
+            <div class="room-content" id="room-content"></div>
+          </div>
+
+          <div class="doors-panel">
+            <div class="doors-title">Available Thresholds (One-Way Circuit)</div>
+            <div class="doors-grid" id="room-doors"></div>
+          </div>
+        </div>
+
+        <!-- Right Side: Suspect Roster & Forensic Clues -->
+        <div class="dossier-panel">
+          <div>
+            <div class="panel-heading">
+              <span>Mask Dossier</span>
+              <span id="unmask-count">0 / 9 Unmasked</span>
+            </div>
+            <ul class="suspect-list" id="suspect-roster"></ul>
+
+            <div class="panel-heading" style="margin-top:10px;">
+              <span>Forensic Autopsy Log</span>
+            </div>
+            <div class="forensic-log-box" id="forensic-log">
+              <em>Solve environmental puzzle locks to decipher and log physical clues.</em>
+            </div>
+          </div>
+
+          <div style="border-top: 1px solid var(--autumn-border); padding-top: 14px;">
+            <button class="btn-burgundy" style="width:100%; margin-bottom:8px;" id="btn-accuse-action" onclick="openAccuseModal()">Deliver Formal Accusation</button>
+            <button class="btn-forest" style="width:100%;" id="btn-hero-ability" onclick="useHeroAbility()">Use Persona Perk</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: WIN SCREEN -->
+    <div id="screen-win" class="screen">
+      <div class="end-container">
+        <h2 class="end-title">Truth Unmasked: Case Solved</h2>
+        <div class="end-body" id="win-text"></div>
+        <button class="btn-burgundy" style="width:100%; padding:14px;" onclick="location.reload()">Return to Guest Register</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: WRONGFUL CONVICTION -->
+    <div id="screen-fail" class="screen">
+      <div class="end-container" style="border-color: var(--autumn-burgundy);">
+        <h2 class="end-title" style="color:var(--autumn-amber);">Case Compromised: Wrongful Conviction</h2>
+        <div class="end-body" id="fail-text"></div>
+        <button class="btn-burgundy" style="width:100%; padding:14px;" onclick="location.reload()">Start Anew</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 5: YOU GOT CAUGHT -->
+    <div id="screen-caught" class="screen">
+      <div class="end-container" style="border-color: #8c2d19; box-shadow: 0 0 35px rgba(140, 45, 25, 0.4);">
+        <h2 class="end-title" style="color:#ff7b88;">You Got Caught</h2>
+        <div class="end-body" id="caught-text"></div>
+        <button class="btn-burgundy" style="width:100%; padding:14px;" onclick="location.reload()">Face Trial (Try Again)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PUZZLE & UNMASK MODAL -->
+  <div class="modal-overlay" id="puzzle-modal">
+    <div class="modal-box">
+      <h2 id="puz-title">Decipher Clue</h2>
+      <p id="puz-prompt"></p>
+      <div class="hint-container" id="puz-hint-box" style="display:none;"></div>
+      <input type="text" id="puz-input" placeholder="Type solution and press ENTER..." />
+      <div style="display:flex; gap:10px; margin-bottom:8px;">
+        <button class="btn-burgundy" style="flex:1;" onclick="submitPuzzleSolution()">Submit Deduction</button>
+        <button style="flex:1;" id="btn-request-hint" onclick="revealHint()">Consult Notes (Hint)</button>
+      </div>
+      <button style="width:100%; background:var(--autumn-card-inner); border-color:var(--autumn-border);" onclick="closeModal('puzzle-modal')">Step Back / Close (ESC)</button>
+    </div>
+  </div>
+
+  <!-- ACCUSATION MODAL -->
+  <div class="modal-overlay" id="accuse-modal">
+    <div class="modal-box">
+      <h2>Deliver Formal Accusation</h2>
+      <p>Identify the true culprit and lethal mechanism before the midnight bell strikes twelve.</p>
+      
+      <label style="font-size:0.8rem; font-family:var(--font-display); color:var(--autumn-amber); display:block; margin-bottom:4px;">The True Killer:</label>
+      <select id="accuse-suspect" style="width:100%; background:var(--autumn-card-inner); border:1px solid var(--autumn-border); color:var(--autumn-text); padding:8px; margin-bottom:12px; font-family:var(--font-body);">
+        <option value="">Select Mask Disguise</option>
+        <option value="Beatrice">The Moonlit Marionette</option>
+        <option value="Benedick">The Velvet Minotaur</option>
+        <option value="Bertram">The Clockwork Doctor</option>
+        <option value="Helena">The Gilded Crow</option>
+        <option value="Rosalind">The Golden Harlequin</option>
+        <option value="Katherina">The Weeping Siren</option>
+        <option value="Orlando">The Obsidian Knight</option>
+        <option value="Petruchio">The Copper Gargoyle</option>
+        <option value="Viola">The Silk Spider</option>
+        <option value="Orsino">The Frost King</option>
+      </select>
+
+      <label style="font-size:0.8rem; font-family:var(--font-display); color:var(--autumn-amber); display:block; margin-bottom:4px;">Lethal Mechanism:</label>
+      <select id="accuse-weapon" style="width:100%; background:var(--autumn-card-inner); border:1px solid var(--autumn-border); color:var(--autumn-text); padding:8px; margin-bottom:18px; font-family:var(--font-body);">
+        <option value="">Select Murder Weapon</option>
+        <option value="aconite">Aconite contact paste on the velvet mask rim</option>
+        <option value="curare">Pneumatic curare needle discharged from a walking cane</option>
+        <option value="dagger">Triangular stiletto dagger thrust under the left rib</option>
+        <option value="belladonna">Belladonna extract stirred into the private port goblet</option>
+        <option value="cord">Braided silk cord tightened at the mezzanine landing</option>
+      </select>
+
+      <div style="display:flex; gap:10px;">
+        <button class="btn-burgundy" style="flex:1;" onclick="confirmAccusation()">Accuse</button>
+        <button style="flex:1;" onclick="closeModal('accuse-modal')">Withdraw</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 1. FALLING LEAVES CANVAS ---
+    const canvas = document.getElementById('leaves-canvas');
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    window.addEventListener('resize', () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    });
+
+    const leafColors = ['#8c2d19', '#b3541e', '#5c1d24', '#c8963e', '#3f1c14'];
+    const leaves = Array.from({ length: 42 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      size: Math.random() * 8 + 6,
+      speedY: Math.random() * 0.8 + 0.4,
+      speedX: Math.random() * 0.6 - 0.3,
+      angle: Math.random() * 360,
+      spin: (Math.random() - 0.5) * 1.5,
+      color: leafColors[Math.floor(Math.random() * leafColors.length)]
+    }));
+
+    function drawLeaf(x, y, size, angle, color) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate((angle * Math.PI) / 180);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(0, -size);
+      ctx.quadraticCurveTo(size * 0.8, -size * 0.3, 0, size);
+      ctx.quadraticCurveTo(-size * 0.8, -size * 0.3, 0, -size);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function renderLeaves() {
+      ctx.clearRect(0, 0, width, height);
+      for (const leaf of leaves) {
+        leaf.y += leaf.speedY;
+        leaf.x += leaf.speedX;
+        leaf.angle += leaf.spin;
+        if (leaf.y > height + 20) { leaf.y = -20; leaf.x = Math.random() * width; }
+        if (leaf.x > width + 20) leaf.x = -20;
+        if (leaf.x < -20) leaf.x = width + 20;
+        drawLeaf(leaf.x, leaf.y, leaf.size, leaf.angle, leaf.color);
+      }
+      requestAnimationFrame(renderLeaves);
+    }
+    renderLeaves();
+
+    // --- 2. SUSPECT DOSSIER PROFILES ---
+    const SUSPECT_PROFILES = {
+      Helena: {
+        trueName: "Countess Helena Vane",
+        outfit: "A dramatic feathered mantle of iridescent midnight crow plumage, an antique filigree beak mask, and sharp velvet court gloves.",
+        quote: "Things base and vile, holding no quantity, love can transpose to form and dignity."
+      },
+      Benedick: {
+        trueName: "Lord Benedick Sterling",
+        outfit: "A tailored midnight tuxedo beneath a heavy black velvet horned bull headpiece, sporting a sapphire signet ring and heavy riding cuffs.",
+        quote: "Thou and I are too wise to woo peaceably. The world must be peopled."
+      },
+      Viola: {
+        trueName: "Viola of Illyria",
+        outfit: "Gossamer black lace woven into a delicate spiderweb silhouette, complete with an embroidered veil and lavender-scented silk ribbons.",
+        quote: "I am all the daughters of my father's house, and all the brothers too."
+      },
+      Katherina: {
+        trueName: "Katherina Minola",
+        outfit: "An elaborate Venetian siren gown adorned with shimmering blue sequins, crowned by a porcelain mask streaming with painted theatrical tears.",
+        quote: "My tongue will tell the anger of my heart, or else my heart concealing it will break."
+      },
+      Petruchio: {
+        trueName: "Petruchio of Verona",
+        outfit: "A verdigris copper hood shaped like a leering cathedral gargoyle, accompanied by rough traveler's wool and boots dusty with limestone mortar.",
+        quote: "Have I not heard great ordnance in the field, and heaven’s artillery thunder in the skies? And do you tell me of a woman's tongue?"
+      },
+      Orlando: {
+        trueName: "Captain Orlando de Boys",
+        outfit: "A full suit of blackened steel cavalry armor with an impenetrable iron visor, leather sword-frog, and chainmail-lined gauntlets.",
+        quote: "Neither rhyme nor reason can express how much. Love is merely a madness."
+      },
+      Orsino: {
+        trueName: "Duke Orsino of Illyria",
+        outfit: "A silver-frosted ermine cloak with an ornate filigree half-mask, frosted crystal buttons, and high-collared velvet.",
+        quote: "If music be the food of love, play on; give me excess of it."
+      },
+      Bertram: {
+        trueName: "Dr. Bertram Ward",
+        outfit: "A dark oilcloth physician's trench coat, heavy brass-grilled plague doctor lenses, and a hollow cane concealing apothecary instruments.",
+        quote: "A poor physician's patient hath no need of medicine if the heart be true."
+      },
+      Beatrice: {
+        trueName: "Lady Beatrice Montrose",
+        outfit: "An austere cracked-porcelain doll mask, a vintage mourning lace gown, and a hand-carved sandalwood fan tied with silk ribbons.",
+        quote: "I had rather hear my dog bark at a crow than a man swear he loves me."
+      },
+      Rosalind: {
+        trueName: "Rosalind Gale",
+        outfit: "Sharp masculine courtier doublet in harlequin diamond silk, adorned with tiny gilded brass bells and a tilted gold mask.",
+        quote: "Do you not know I am a woman? When I think, I must speak."
+      }
+    };
+
+    // --- 3. DATA ARCHITECTURE ---
+    const PROTAGONISTS = {
+      beatrice: {
+        name: "Lady Beatrice Montrose",
+        alias: "Beatrice",
+        persona: "The Moonlit Marionette",
+        gender: "female",
+        quote: "I had rather hear my dog bark at a crow than a man swear he loves me.",
+        blackmail: "Forged railway debt notes prepared to liquidate her ancestral house.",
+        perkTitle: "Wicked Wit",
+        perkDesc: "Your sharp intellect grants 1 additional hint on every decipher puzzle.",
+        abilityUsed: false
+      },
+      benedick: {
+        name: "Lord Benedick Sterling",
+        alias: "Benedick",
+        persona: "The Velvet Minotaur",
+        gender: "male",
+        quote: "Thou and I are too wise to woo peaceably.",
+        blackmail: "Ledgers documenting illicit gaming houses operating under his seal.",
+        perkTitle: "Iron Nerve",
+        perkDesc: "Adds 5 extra minutes to timed modes, and mistake penalties are halved.",
+        abilityUsed: false
+      },
+      bertram: {
+        name: "Dr. Bertram Ward",
+        alias: "Bertram",
+        persona: "The Clockwork Doctor",
+        gender: "male",
+        quote: "A poor physician's patient hath no need of medicine if the heart be true.",
+        blackmail: "Sealed malpractice inquiries from an experimental maritime trial.",
+        perkTitle: "Apothecary's Insight",
+        perkDesc: "Instantly auto-solves botanical and chemical compound ciphers.",
+        abilityUsed: false
+      },
+      helena: {
+        name: "Countess Helena Vane",
+        alias: "Helena",
+        persona: "The Gilded Crow",
+        gender: "female",
+        quote: "Love looks not with the eyes, but with the mind.",
+        blackmail: "Appraisals asserting her centerpiece Byzantine icon is an elaborate forgery.",
+        perkTitle: "Appraiser's Eye",
+        perkDesc: "Can bypass one locked door or puzzle instantly during the investigation.",
+        abilityUsed: false
+      },
+      rosalind: {
+        name: "Rosalind Gale",
+        alias: "Rosalind",
+        persona: "The Golden Harlequin",
+        gender: "female",
+        quote: "Do you not know I am a woman? When I think, I must speak.",
+        blackmail: "Print runs tracing the underground political pamphlet 'The Arden Clarion.'",
+        perkTitle: "Harmonic Cadence",
+        perkDesc: "Listening to acoustic echoes eliminates 2 false timeline candidates.",
+        abilityUsed: false
+      }
+    };
+
+    const NPC_ROSTER = [
+      { id: 'Katherina', persona: 'The Weeping Siren', trueName: 'Katherina' },
+      { id: 'Orlando', persona: 'The Obsidian Knight', trueName: 'Orlando' },
+      { id: 'Petruchio', persona: 'The Copper Gargoyle', trueName: 'Petruchio' },
+      { id: 'Viola', persona: 'The Silk Spider', trueName: 'Viola' },
+      { id: 'Orsino', persona: 'The Frost King', trueName: 'Orsino' }
+    ];
+
+    const KILLER_CONFIGS = {
+      Katherina: {
+        suspect: 'Katherina',
+        suspectTitle: 'The Weeping Siren',
+        weapon: 'aconite',
+        bodyClue: "The skin along Richard's neck and temples is inflamed with severe dermal rash, and a waxy blue paste clings to the inner velvet of his mask. He suffered acute cardiovascular collapse.",
+        groundClue: "A smudged theatrical blue greasepaint tear and a dried alpine monkshood petal.",
+        confession: "The Weeping Siren strips off her mask with shaking fingers: 'Richard forced me into an inescapable contract, threatening to bury my career in scandal if I refused his demands! I lined the velvet edge of his mask with aconite paste before the toast. I would rather hang than live as his stage slave!'"
+      },
+      Orlando: {
+        suspect: 'Orlando',
+        suspectTitle: 'The Obsidian Knight',
+        weapon: 'dagger',
+        bodyClue: "Beneath Richard's silk waistcoat lies a narrow triangular puncture cleanly piercing the left ventricle. The blow was dealt with military precision by someone wearing heavy gauntlets.",
+        groundClue: "A tiny link of blackened chainmail mesh and a smear of machine grease.",
+        confession: "The Obsidian Knight's iron visor crashes to the floorboards: 'He bought my regiment out from under me and treated my honorable discharge like scrap paper at dice! A soldier strikes true. I put a stiletto beneath his ribs while the waltz masked the blow!'"
+      },
+      Petruchio: {
+        suspect: 'Petruchio',
+        suspectTitle: 'The Copper Gargoyle',
+        weapon: 'cord',
+        bodyClue: "Deep purple horizontal furrowing encircles Richard's larynx. The hyoid bone is fractured by immense physical force from behind using a twisted braided cord.",
+        groundClue: "Trace copper verdigris shavings and heavy gritty limestone mortar dust.",
+        confession: "The Copper Gargoyle glares with stone-faced defiance: 'Richard tricked my father out of our merchant fleet on a fixed wager. When the lights flickered, I choked the breath from his throat on the mezzanine steps. The estate is free of him!'"
+      },
+      Viola: {
+        suspect: 'Viola',
+        suspectTitle: 'The Silk Spider',
+        weapon: 'belladonna',
+        bodyClue: "Richard's pupils are blown completely wide to the rim of the irises. His tongue is parched and purple, smelling of sweet almond and dark nightshade port.",
+        groundClue: "A torn scrap of black gossamer web lace carrying the faint scent of dried belladonna berries.",
+        confession: "The Silk Spider removes her gossamer veil: 'Richard intercepted my correspondence and held the lives of three innocent families hostage! I poured belladonna into his private port glass. I saved more lives tonight than the law ever could!'"
+      },
+      Bertram: {
+        suspect: 'Bertram',
+        suspectTitle: 'The Clockwork Doctor',
+        weapon: 'curare',
+        bodyClue: "A microscopic puncture wound is hidden near the brachial artery in Richard's right arm. His musculature shows immediate total flaccid paralysis preceding cardiac arrest.",
+        groundClue: "A dropped pneumatic brass needle tip smelling of botanical curare resin.",
+        confession: "The Clockwork Doctor raises his cane with clinical calm: 'Richard held my medical license over my head for seven years, demanding poisons under threat of prison. I discharged a curare dart into his arm from my cane. The autopsy will note only heart failure.'"
+      },
+      Beatrice: {
+        suspect: 'Beatrice',
+        suspectTitle: 'The Moonlit Marionette',
+        weapon: 'belladonna',
+        bodyClue: "Traces of lethal belladonna tincture were detected on the rim of Richard's private crystal glass.",
+        groundClue: "A torn silk ribbon smelling of orange-blossom perfume.",
+        confession: "The Moonlit Marionette tilts her head: 'Richard held debt papers that would have made beggars of my entire house. I gave him a vintage he would never wake from.'"
+      }
+    };
+
+    // --- 4. TIERED SUSPECT PUZZLE BANK ---
+    const TIERED_PUZZLE_BANKS = {
+      Helena: {
+        easy: {
+          title: "Byzantine Seal (Wax Anagram)",
+          prompt: "The wax seal rim dropped in the shadows is stamped with jumbled letters: A N E L E H. Reorder to unmask The Gilded Crow.",
+          solution: "HELENA",
+          hints: ["The Countess from All's Well That Ends Well.", "Begins with H.", "Spells H-E-L-E-N-A."]
+        },
+        medium: {
+          title: "Byzantine Seal (Atbash Cipher)",
+          prompt: "An antique seal uses an Atbash alphabet reversal (A↔Z, B↔Y, S↔H, V↔E, O↔L, M↔N): S V O V M Z. Decrypt to reveal who stands behind The Gilded Crow.",
+          solution: "HELENA",
+          hints: ["Reverse each letter: S becomes H, V becomes E.", "The antiquities appraiser.", "Spells H-E-L-E-N-A."]
+        },
+        hard: {
+          title: "Gallery Monogram (Caesar Shift -3)",
+          prompt: "A silken sash bears initials shifted forward by +3: K H O H Q D. Shift each letter backward by 3 (D←G, A←D) to identify her.",
+          solution: "HELENA",
+          hints: ["K minus 3 is H; H minus 3 is E.", "Countess Vane.", "Spells H-E-L-E-N-A."]
+        }
+      },
+      Benedick: {
+        easy: {
+          title: "Dance Card (Calligraphy Anagram)",
+          prompt: "A dance card bearing the Minotaur's crest has jumbled letters: C I D E N E B K. Unscramble the name to expose the nobleman behind the horns.",
+          solution: "BENEDICK",
+          hints: ["The witty counterpart to Beatrice in Much Ado About Nothing.", "Begins with B.", "Spells B-E-N-E-D-I-C-K."]
+        },
+        medium: {
+          title: "Gaming Ledger (Atbash Cipher)",
+          prompt: "A gambling slip uses an Atbash cipher: Y V M V W R X P. Decrypt (Y↔B, V↔E, M↔N, W↔D, R↔I, X↔C, P↔K) to name the Minotaur.",
+          solution: "BENEDICK",
+          hints: ["Y becomes B; V becomes E.", "Lord Sterling.", "Spells B-E-N-E-D-I-C-K."]
+        },
+        hard: {
+          title: "Minotaur Signet (Caesar Shift -4)",
+          prompt: "His signet ring is shifted forward by +4: F I R I H M G O. Shift backward by 4 (A←E, B←F) to identify the lord.",
+          solution: "BENEDICK",
+          hints: ["F minus 4 is B; I minus 4 is E.", "The disowned kinsman.", "Spells B-E-N-E-D-I-C-K."]
+        }
+      },
+      Viola: {
+        easy: {
+          title: "Silk Spool (Anagram)",
+          prompt: "Stitched inside her hem is a jumbled name: O L A I V. Reorder the letters to identify the lady beneath the spiderweb.",
+          solution: "VIOLA",
+          hints: ["The shipwrecked heroine of Twelfth Night.", "Begins with V.", "Spells V-I-O-L-A."]
+        },
+        medium: {
+          title: "Lace Ribbon (Alternating Skip Cipher)",
+          prompt: "Every second letter in this stitch-work is a decoy: V Z I Y O X L W A. Extract every odd letter starting with V to reveal her true identity.",
+          solution: "VIOLA",
+          hints: ["Extract letter 1, 3, 5, 7, 9.", "Secret courier of the masquerade.", "Spells V-I-O-L-A."]
+        },
+        hard: {
+          title: "Courier Dispatch (Caesar Shift -3)",
+          prompt: "Her encoded dispatch is shifted forward by +3: Y L R O D. Shift each letter backward by 3 (D←G, A←D) to reveal her name.",
+          solution: "VIOLA",
+          hints: ["Y minus 3 is V; L minus 3 is I.", "Disguised as Cesario in Shakespeare's comedy.", "Spells V-I-O-L-A."]
+        }
+      },
+      Katherina: {
+        easy: {
+          title: "Torn Playbill (Anagram)",
+          prompt: "A theatrical playbill scrap has the star's name anagrammed: A N I R E H T A K. Reorder to expose the prima donna.",
+          solution: "KATHERINA",
+          hints: ["The fiery heroine of The Taming of the Shrew.", "Begins with K.", "Spells K-A-T-H-E-R-I-N-A."]
+        },
+        medium: {
+          title: "Stage Dressing Mirror (Skip Cipher)",
+          prompt: "Greasepaint on the glass reads: K M A O T P H Q E R R S I T N U A. Take every second letter starting with K.",
+          solution: "KATHERINA",
+          hints: ["Take K, skip M, take A...", "The weeping siren.", "Spells K-A-T-H-E-R-I-N-A."]
+        },
+        hard: {
+          title: "Contract Seal (Caesar Shift -2)",
+          prompt: "Her theater contract is shifted +2: M C V J G T K P C. Shift backward by 2 (A←C, K←M) to identify the prima donna.",
+          solution: "KATHERINA",
+          hints: ["M minus 2 is K; C minus 2 is A.", "Daughter of Baptista in Padua.", "Spells K-A-T-H-E-R-I-N-A."]
+        }
+      },
+      Petruchio: {
+        easy: {
+          title: "Architect's Oak Scratches (Mirror Reverse)",
+          prompt: "Scratched into the oak barrel in mirror letters: O I H C U R T E P. Reverse the letters to reveal the reckless speculator.",
+          solution: "PETRUCHIO",
+          hints: ["Read backward from right to left.", "The bold gentleman from Verona.", "Spells P-E-T-R-U-C-H-I-O."]
+        },
+        medium: {
+          title: "Masonry Ledger (Alternating Skip Cipher)",
+          prompt: "A stone-cutting log reads: P A E B T C R D U E C F H G I H O. Take alternating letters starting with P.",
+          solution: "PETRUCHIO",
+          hints: ["Extract letter 1, 3, 5...", "The Copper Gargoyle.", "Spells P-E-T-R-U-C-H-I-O."]
+        },
+        hard: {
+          title: "Cellar Vault (Caesar Shift -3)",
+          prompt: "Chalked on the cellar arch with shift +3: S H W U X F K L R. Shift each letter backward by 3 to name the architect.",
+          solution: "PETRUCHIO",
+          hints: ["S minus 3 is P; H minus 3 is E.", "He who tamed the shrew.", "Spells P-E-T-R-U-C-H-I-O."]
+        }
+      },
+      Orlando: {
+        easy: {
+          title: "Military Requisition (Anagram)",
+          prompt: "A disgraced cavalry officer's dispatch signed with anagram: O D N A L R O. Reorder to identify the knight.",
+          solution: "ORLANDO",
+          hints: ["Hero of As You Like It who carved poems on trees.", "Begins with O.", "Spells O-R-L-A-N-D-O."]
+        },
+        medium: {
+          title: "Commission Receipt (Skip Cipher)",
+          prompt: "A military debt note reads: O X R Y L Z A W N V D U O. Take every second letter starting with O.",
+          solution: "ORLANDO",
+          hints: ["Take letter 1, skip 2, take 3...", "The Obsidian Knight.", "Spells O-R-L-A-N-D-O."]
+        },
+        hard: {
+          title: "Blackened Scabbard (Atbash Cipher)",
+          prompt: "Etched into his scabbard in Atbash: L I O Z M W L. Decrypt (L↔O, I↔R, O↔L, Z↔A, M↔N, W↔D, L↔O) to unmask the knight.",
+          solution: "ORLANDO",
+          hints: ["L becomes O; I becomes R.", "Youngest son of Sir Rowland de Boys.", "Spells O-R-L-A-N-D-O."]
+        }
+      },
+      Orsino: {
+        easy: {
+          title: "Sonnet Score (Anagram)",
+          prompt: "Music inscribed with 'If music be the food of love, play on' has an anagram signature: O N I S R O. Reorder to unmask The Frost King.",
+          solution: "ORSINO",
+          hints: ["Duke of Illyria in Twelfth Night.", "Begins with O.", "Spells O-R-S-I-N-O."]
+        },
+        medium: {
+          title: "Courtship Draft (Skip Cipher)",
+          prompt: "A tune card reads: O K R M S P I Q N T O. Take every odd letter starting with O.",
+          solution: "ORSINO",
+          hints: ["Extract 1, 3, 5, 7, 9, 11.", "The melancholic romantic noble.", "Spells O-R-S-I-N-O."]
+        },
+        hard: {
+          title: "Silver Fur Cloak (Caesar Shift -3)",
+          prompt: "A monogram shifted forward by +3: R U V L Q R. Shift backward by 3 to name The Frost King.",
+          solution: "ORSINO",
+          hints: ["R minus 3 is O; U minus 3 is R.", "Duke Orsino of Illyria.", "Spells O-R-S-I-N-O."]
+        }
+      },
+      Bertram: {
+        easy: {
+          title: "Apothecary Prescription (Anagram)",
+          prompt: "The physician's prescription has his Latin surname anagrammed: M A R T R E B. Reorder to reveal the doctor's name.",
+          solution: "BERTRAM",
+          hints: ["Young Count of Rousillon in All's Well That Ends Well.", "Begins with B.", "Spells B-E-R-T-R-A-M."]
+        },
+        medium: {
+          title: "Botany Label (Skip Cipher)",
+          prompt: "A chemical tag reads: B Z E Y R X T W R V A U M. Take every second letter starting with B.",
+          solution: "BERTRAM",
+          hints: ["Extract 1, 3, 5, 7, 9, 11, 13.", "The Clockwork Doctor.", "Spells B-E-R-T-R-A-M."]
+        },
+        hard: {
+          title: "Surgical Case Stamp (Atbash Cipher)",
+          prompt: "Etched into his scalpel in Atbash: Y V I G I Z N. Decrypt (Y↔B, V↔E, I↔R, G↔T, I↔R, Z↔A, N↔M) to unmask the physician.",
+          solution: "BERTRAM",
+          hints: ["Y becomes B; V becomes E.", "Disgraced royal surgeon.", "Spells B-E-R-T-R-A-M."]
+        }
+      },
+      Beatrice: {
+        easy: {
+          title: "Gilded Invitation (Anagram)",
+          prompt: "An invitation card bears the anagram: C I T E R A B E. Reorder to unmask Lady Disdain.",
+          solution: "BEATRICE",
+          hints: ["Heroine of Much Ado About Nothing.", "Begins with B.", "Spells B-E-A-T-R-I-C-E."]
+        },
+        medium: {
+          title: "Silk Handkerchief (Skip Cipher)",
+          prompt: "Lace border letters: B L E O A V T E R D I C C E E. Take every second letter starting with B.",
+          solution: "BEATRICE",
+          hints: ["Extract 1, 3, 5, 7, 9, 11, 13, 15.", "The proud porcelain lady.", "Spells B-E-A-T-R-I-C-E."]
+        },
+        hard: {
+          title: "Mask Rim Crest (Caesar Shift -2)",
+          prompt: "A crest shifted forward by +2: D G C V T K E G. Shift backward by 2 (A←C, B←D) to identify the lady.",
+          solution: "BEATRICE",
+          hints: ["D minus 2 is B; G minus 2 is E.", "Lady Beatrice Montrose.", "Spells B-E-A-T-R-I-C-E."]
+        }
+      },
+      Rosalind: {
+        easy: {
+          title: "Pamphlet Draft (Anagram)",
+          prompt: "A draft of 'The Arden Clarion' has an anagram signature: D N I L A S O R. Reorder to identify the radical pamphleteer.",
+          solution: "ROSALIND",
+          hints: ["Heroine of As You Like It who fled to Arden.", "Begins with R.", "Spells R-O-S-A-L-I-N-D."]
+        },
+        medium: {
+          title: "Pamphlet Header (Skip Cipher)",
+          prompt: "Headline cipher: R A O B S C A D L E I F N G D. Take every odd letter starting with R.",
+          solution: "ROSALIND",
+          hints: ["Extract letter 1, 3, 5, 7, 9, 11, 13, 15.", "The Golden Harlequin.", "Spells R-O-S-A-L-I-N-D."]
+        },
+        hard: {
+          title: "Printing Type Slug (Caesar Shift -3)",
+          prompt: "Metal printer type is shifted +3: U R V D O L Q G. Shift backward by 3 (D←G, A←D) to name the pamphleteer.",
+          solution: "ROSALIND",
+          hints: ["U minus 3 is R; R minus 3 is O.", "Rosalind Gale.", "Spells R-O-S-A-L-I-N-D."]
+        }
+      }
+    };
+
+    // --- 5. EXPANDED ENVIRONMENTAL HOTSPOT PUZZLE BANKS ---
+    const HOTSPOT_PUZZLE_BANKS = {
+      punchbowl: [
+        {
+          title: "Punch Bowl (Caesar Shift -3)",
+          prompt: "A chemical tag on the broken punch bowl crystal is encrypted with shift +3: 'Y L Q H J D U'. Shift each letter backward by 3 (D←G, A←D) to identify the acidic solvent used to neutralize the spilled drops.",
+          solution: "VINEGAR",
+          logText: "Punch Bowl Solvent: Acidic vinegar wash was used to cleanse spilled alkaloid drops from the silver rim.",
+          hints: ["Subtract 3 positions: Y becomes V, L becomes I, etc.", "A common household acetic liquid.", "Spells V-I-N-E-G-A-R."]
+        },
+        {
+          title: "Punch Bowl (Atbash Precipitate)",
+          prompt: "A chalky residue dried inside the crystal base bears an Atbash cipher: X S O L I R W V. Decrypt (X↔C, S↔H, O↔L, L↔O, I↔R, R↔I, W↔D, V↔E) to identify the neutralizer salt.",
+          solution: "CHLORIDE",
+          logText: "Punch Bowl Residue: Heavy chloride salts present, confirming an attempt to dissolve chemical precipitates.",
+          hints: ["X becomes C; S becomes H; O becomes L.", "A common halide chemical compound.", "Spells C-H-L-O-R-I-D-E."]
+        },
+        {
+          title: "Punch Bowl (Sediment Anagram)",
+          prompt: "Etched into the silver ladle found in the bowl is an anagram of the alkaline compound: N O B A R T O N. Reorder the letters to identify the chemical base.",
+          solution: "CARBONATE",
+          logText: "Punch Bowl Analysis: Effervescent carbonate traces confirmed in the vintage sediment.",
+          hints: ["A basic salt often used in apothecary mixtures.", "Begins with C: C-A-R-B...", "Spells C-A-R-B-O-N-A-T-E."]
+        }
+      ],
+      terrarium: [
+        {
+          title: "Terrarium Dial Lock (Atbash Cipher)",
+          prompt: "A brass padlock on the toxic plant terrarium has letters in Atbash: Z X L M R G V. Reverse (Z↔A, X↔C, L↔O, M↔N, R↔I, G↔T, V↔E) to unlock the terrarium.",
+          solution: "ACONITE",
+          logText: "Terrarium Evidence: Fresh clippings taken from toxic blue Aconite planters.",
+          hints: ["In Atbash, Z becomes A, X becomes C, L becomes O.", "A lethal alpine blue flower known as monkshood.", "Spells A-C-O-N-I-T-E."]
+        },
+        {
+          title: "Terrarium Dial Lock (Caesar Shift -2)",
+          prompt: "The brass latch has Greek botanist shorthand shifted forward by +2: D G N N C F Q P P C. Shift each letter backward by 2 (A←C, B←D) to identify the clipped nightshade.",
+          solution: "BELLADONNA",
+          logText: "Terrarium Evidence: Fresh berries and leaves stripped from the lethal Belladonna vine.",
+          hints: ["D minus 2 is B; G minus 2 is E; N minus 2 is L.", "Known as 'deadly nightshade' or 'beautiful lady'.", "Spells B-E-L-L-A-D-O-N-N-A."]
+        },
+        {
+          title: "Terrarium Dial Lock (Skip Cipher)",
+          prompt: "A botanical tag tied to the pruning shears reads: H C E Y M W L T O C K. Extract every odd letter starting with H to name the deadly poison.",
+          solution: "HEMLOCK",
+          logText: "Terrarium Evidence: Fresh stems harvested from the estate's wild water hemlock roots.",
+          hints: ["Take H, skip C, take E, skip Y, take M...", "The ancient toxic plant that felled Socrates.", "Spells H-E-M-L-O-C-K."]
+        }
+      ],
+      ledger: [
+        {
+          title: "Desk Ledger Lock (Anagram Code)",
+          prompt: "Lord Richard's private desk drawer is locked with a 7-letter word combination: R E B B Y O R. Unscramble the letters to reveal what crime Richard documented across every guest's profile.",
+          solution: "ROBBERY",
+          logText: "Ledger Motive: Richard recorded extortion demands against all nine guests, verifying universal motive.",
+          hints: ["A crime involving illicit extortion or theft.", "Begins with R.", "Spells R-O-B-B-E-R-Y."]
+        },
+        {
+          title: "Desk Ledger Lock (Caesar Shift -1)",
+          prompt: "Scratched into the brass hasp of Richard's loan book with shift +1: U S F B T P O. Shift each letter backward by 1 (A←B, B←C) to name the state offense he was holding over the guests.",
+          solution: "TREASON",
+          logText: "Ledger Motive: Documents detailing seditious maritime commerce and treasonable private contracts.",
+          hints: ["U minus 1 is T; S minus 1 is R; F minus 1 is E.", "A high capital crime against the Crown.", "Spells T-R-E-A-S-O-N."]
+        },
+        {
+          title: "Desk Ledger Lock (Atbash Cipher)",
+          prompt: "A cipher seal on Richard's inner compartment in Atbash: K V I Q F I B. Decrypt (K↔P, V↔E, I↔R, Q↔J, F↔U, I↔R, B↔Y) to expose the legal weapon he wielded.",
+          solution: "PERJURY",
+          logText: "Ledger Motive: Sworn false affidavits proving Richard framed multiple attendees for perjury.",
+          hints: ["K becomes P; V becomes E; I becomes R.", "The crime of swearing a false oath under law.", "Spells P-E-R-J-U-R-Y."]
+        }
+      ]
+    };
+
+    // --- 6. STATE MACHINE ---
+    const state = {
+      heroKey: null,
+      difficulty: 'easy',
+      currentRoom: 'Ballroom',
+      actualKiller: 'Katherina',
+      crossExamsLeft: 4,
+      lives: 3,
+      timerSeconds: 0,
+      timerInterval: null,
+      unmaskedCount: 0,
+      activePuzzle: null,
+      hintsViewed: 0,
+      interrogatedSuspects: new Set(),
+      completedActions: new Set(),
+      roomAssignments: {},
+      assignedHotspotPuzzles: {} // Rolled on game start
+    };
+
+    function highlightChar(key) {
+      state.heroKey = key;
+      document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+
+      const hero = PROTAGONISTS[key];
+      const box = document.getElementById('bio-summary');
+      box.innerHTML = `
+        <div class="details-title">${hero.persona} — <em>${hero.name}</em></div>
+        <div class="details-quote">"${hero.quote}"</div>
+        <div class="details-field"><strong>At Stake:</strong> ${hero.blackmail}</div>
+        <div class="details-field"><strong>Special Ability (${hero.perkTitle}):</strong> ${hero.perkDesc}</div>
+      `;
+
+      document.getElementById('btn-start').disabled = false;
+    }
+
+    function updateModeDesc() {
+      const mode = document.querySelector('input[name="diff"]:checked').value;
+      state.difficulty = mode;
+    }
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function startGame() {
+      if (!state.heroKey) return;
+
+      const hero = PROTAGONISTS[state.heroKey];
+      document.getElementById('hud-identity').textContent = `Mask: ${hero.persona}`;
+      
+      const candidatePool = ['Katherina', 'Orlando', 'Petruchio', 'Viola', 'Bertram', 'Beatrice']
+        .filter(name => name !== hero.alias);
+      state.actualKiller = candidatePool[Math.floor(Math.random() * candidatePool.length)];
+
+      // Randomly assign 1 environmental puzzle per hotspot from the bank!
+      state.assignedHotspotPuzzles = {
+        punchbowl: HOTSPOT_PUZZLE_BANKS.punchbowl[Math.floor(Math.random() * HOTSPOT_PUZZLE_BANKS.punchbowl.length)],
+        terrarium: HOTSPOT_PUZZLE_BANKS.terrarium[Math.floor(Math.random() * HOTSPOT_PUZZLE_BANKS.terrarium.length)],
+        ledger: HOTSPOT_PUZZLE_BANKS.ledger[Math.floor(Math.random() * HOTSPOT_PUZZLE_BANKS.ledger.length)]
+      };
+
+      const availableGuests = [
+        { id: 'Helena', persona: 'The Gilded Crow', name: 'Helena' },
+        { id: 'Benedick', persona: 'The Velvet Minotaur', name: 'Benedick' },
+        { id: 'Bertram', persona: 'The Clockwork Doctor', name: 'Bertram' },
+        { id: 'Rosalind', persona: 'The Golden Harlequin', name: 'Rosalind' },
+        { id: 'Beatrice', persona: 'The Moonlit Marionette', name: 'Beatrice' },
+        ...NPC_ROSTER
+      ].filter(s => s.id !== hero.alias);
+
+      const wings = ['Ballroom', 'Gallery', 'Conservatory', 'Library', 'Billiard', 'Mezzanine', 'Terrace', 'Cellar', 'MusicSalon'];
+      const shuffledGuests = shuffleArray([...availableGuests]);
+      
+      state.roomAssignments = {};
+      wings.forEach((wing, index) => {
+        if (shuffledGuests[index]) {
+          state.roomAssignments[wing] = shuffledGuests[index];
+        }
+      });
+
+      if (state.difficulty === 'easy') {
+        state.lives = 3;
+        state.timerSeconds = 0;
+        document.getElementById('hud-timer').textContent = "Time: Untimed";
+      } else if (state.difficulty === 'medium') {
+        state.lives = 2;
+        state.timerSeconds = (hero.alias === 'Benedick') ? 30 * 60 : 25 * 60;
+        startTimer();
+      } else {
+        state.lives = 1;
+        state.timerSeconds = (hero.alias === 'Benedick') ? 20 * 60 : 15 * 60;
+        startTimer();
+      }
+
+      updateLivesDisplay();
+      buildSuspectRoster();
+      document.getElementById('screen-select').classList.remove('active');
+      document.getElementById('screen-game').classList.add('active');
+      goToRoom('Ballroom');
+    }
+
+    function updateLivesDisplay() {
+      const badge = document.getElementById('hud-lives');
+      badge.textContent = `Lives: ${state.lives}`;
+      if (state.lives <= 1) {
+        badge.style.color = "#ff4d61";
+        badge.style.borderColor = "#ff4d61";
+      } else {
+        badge.style.color = "#ff7b88";
+        badge.style.borderColor = "#8c2d19";
+      }
+    }
+
+    function startTimer() {
+      updateTimerDisplay();
+      state.timerInterval = setInterval(() => {
+        state.timerSeconds--;
+        if (state.timerSeconds <= 0) {
+          clearInterval(state.timerInterval);
+          triggerCaughtScreen("Your time ran out. As the grandfather clock chimed twelve, the constables sealed the hall doors. Lord Richard's blackmail dossier was discovered hidden inside your coat—and you were arrested on the spot.");
+        }
+        updateTimerDisplay();
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const m = Math.floor(state.timerSeconds / 60);
+      const s = state.timerSeconds % 60;
+      document.getElementById('hud-timer').textContent = `Clock: ${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function buildSuspectRoster() {
+      const list = document.getElementById('suspect-roster');
+      list.innerHTML = '';
+      
+      const allSuspects = [
+        { id: 'Helena', persona: 'The Gilded Crow', name: 'Helena' },
+        { id: 'Benedick', persona: 'The Velvet Minotaur', name: 'Benedick' },
+        { id: 'Bertram', persona: 'The Clockwork Doctor', name: 'Bertram' },
+        { id: 'Rosalind', persona: 'The Golden Harlequin', name: 'Rosalind' },
+        { id: 'Beatrice', persona: 'The Moonlit Marionette', name: 'Beatrice' },
+        ...NPC_ROSTER
+      ].filter(s => s.id !== PROTAGONISTS[state.heroKey].alias);
+
+      allSuspects.forEach(s => {
+        const li = document.createElement('li');
+        li.className = 'suspect-row';
+        li.id = `roster-${s.id}`;
+        li.onclick = () => inspectSuspectFromRoster(s.id, s.persona);
+        li.innerHTML = `
+          <div>
+            <div style="font-weight:600; color:var(--autumn-text);">${s.persona}</div>
+            <div style="font-size:0.75rem; color:var(--autumn-text-muted);" id="name-${s.id}">Masked Guest</div>
+          </div>
+          <span class="unmask-badge" id="badge-${s.id}">Masked</span>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    function markSuspectUnmasked(id, trueName) {
+      const row = document.getElementById(`roster-${id}`);
+      if (row && !row.classList.contains('unmasked')) {
+        row.classList.add('unmasked');
+        document.getElementById(`name-${id}`).textContent = `Identity: ${trueName}`;
+        const b = document.getElementById(`badge-${id}`);
+        b.textContent = 'Unmasked';
+        b.classList.add('done');
+        state.unmaskedCount++;
+        document.getElementById('unmask-count').textContent = `${state.unmaskedCount} / 9 Unmasked`;
+      }
+    }
+
+    function logForensicEvidence(text) {
+      const box = document.getElementById('forensic-log');
+      const div = document.createElement('div');
+      div.style.marginBottom = '6px';
+      div.innerHTML = `<strong>•</strong> ${text}`;
+      box.appendChild(div);
+    }
+
+    // --- 7. 10 DISTINCT ROOMS ---
+    const ROOMS = {
+      Ballroom: {
+        step: "Wing 1 of 10",
+        title: "The Grand Ballroom",
+        desc: "Flickering gas sconces cast amber shadows over spilled vintage and shattered crystal. <em>'There's daggers in men's smiles; the near in blood, the nearer bloody.'</em>",
+        doors: [{ name: "Forward to East Gallery", target: "Gallery" }]
+      },
+      Gallery: {
+        step: "Wing 2 of 10",
+        title: "The East Portrait Gallery",
+        desc: "Lined with grim portraits of Blackwood ancestors whose painted eyes seem to judge every guest. <em>'What a piece of work is a man...'</em>",
+        doors: [{ name: "Forward to Conservatory", target: "Conservatory" }]
+      },
+      Conservatory: {
+        step: "Wing 3 of 10",
+        title: "The Obsidian Conservatory",
+        desc: "Heavy humidity and the sharp scent of damp earth and exotic orchids. <em>'I know a bank where the wild thyme blows, where oxlips and the nodding violet grows...'</em>",
+        doors: [{ name: "Forward to Grand Library", target: "Library" }]
+      },
+      Library: {
+        step: "Wing 4 of 10",
+        title: "The Grand Library",
+        desc: "Floor-to-ceiling mahogany bookshelves and rolling ladders. <em>'Come, and take choice of all my library, and so beguile thy sorrow.'</em>",
+        doors: [{ name: "Forward to Billiard Room", target: "Billiard" }]
+      },
+      Billiard: {
+        step: "Wing 5 of 10",
+        title: "The Billiard Room",
+        desc: "Green baize illuminated by low fringed lamps. Chalk dust mingles with cigar smoke. <em>'Let us to billiards: come, Charmian.'</em>",
+        doors: [{ name: "Ascend to Mezzanine Landing", target: "Mezzanine" }]
+      },
+      Mezzanine: {
+        step: "Wing 6 of 10",
+        title: "The Mezzanine Landing (Crime Scene)",
+        desc: "Lord Richard sits motionless in his carved chair overlooking the ballroom. <em>'A little water clears us of this deed: How easy is it, then!'</em>",
+        doors: [{ name: "Step Out to Storm Terrace", target: "Terrace" }]
+      },
+      Terrace: {
+        step: "Wing 7 of 10",
+        title: "The Storm Terrace",
+        desc: "Cold autumn rain sweeps across the stone flagstones. <em>'Blow, blow, thou winter wind, thou art not so unkind as man's ingratitude.'</em>",
+        doors: [{ name: "Descend to Wine Cellar", target: "Cellar" }]
+      },
+      Cellar: {
+        step: "Wing 8 of 10",
+        title: "The Vaulted Wine Cellar",
+        desc: "Cool limestone arches and vintage oak casks. <em>'Good wine is a good familiar creature, if it be well used.'</em>",
+        doors: [{ name: "Ascend to Music Salon", target: "MusicSalon" }]
+      },
+      MusicSalon: {
+        step: "Wing 9 of 10",
+        title: "The Music Salon",
+        desc: "A gold-leaf harpsichord and velvet settees. <em>'If music be the food of love, play on; give me excess of it...'</em>",
+        doors: [{ name: "Enter Retiring Chamber", target: "RetiringRoom" }]
+      },
+      LadiesRetiring: {
+        step: "Wing 10 of 10",
+        title: "Ladies' Powder Lounge",
+        desc: "Gilded vanity mirrors, velvet chaise lounges, and the scent of rosewater. <em>'God hath given you one face, and you make yourself another.'</em>",
+        doors: [{ name: "Assemble in the Ballroom for Judgment", target: "BallroomFinal" }]
+      },
+      GentlemenRetiring: {
+        step: "Wing 10 of 10",
+        title: "Gentlemen's Cloakroom",
+        desc: "Dark mahogany lockers and heavy coats hanging from brass hooks. <em>'The apparel oft proclaims the man.'</em>",
+        doors: [{ name: "Assemble in the Ballroom for Judgment", target: "BallroomFinal" }]
+      },
+      BallroomFinal: {
+        step: "Final Assembly",
+        title: "The Grand Ballroom (The Assembly)",
+        desc: "All masked attendees stand gathered before the towering stone fireplace. <em>'Truth will come to light; murder cannot be hid long.'</em>",
+        doors: []
+      }
+    };
+
+    function goToRoom(roomKey) {
+      if (roomKey === 'RetiringRoom') {
+        const gender = PROTAGONISTS[state.heroKey].gender;
+        roomKey = (gender === 'female') ? 'LadiesRetiring' : 'GentlemenRetiring';
+      }
+
+      state.currentRoom = roomKey;
+      const room = ROOMS[roomKey];
+      document.getElementById('room-step').textContent = room.step;
+      document.getElementById('hud-progress').textContent = room.step;
+      document.getElementById('room-name').textContent = room.title;
+      document.getElementById('room-desc').innerHTML = room.desc;
+
+      renderRoomContent(roomKey);
+      renderRoomDoors(room.doors);
+    }
+
+    function renderRoomDoors(doors) {
+      const container = document.getElementById('room-doors');
+      container.innerHTML = '';
+      if (!doors || doors.length === 0) {
+        container.innerHTML = '<div style="font-size:0.85rem; color:var(--autumn-text-muted); font-style:italic;">All wings searched. The final confrontation awaits.</div>';
+        return;
+      }
+      doors.forEach(d => {
+        const btn = document.createElement('button');
+        btn.textContent = d.name;
+        btn.onclick = () => goToRoom(d.target);
+        container.appendChild(btn);
+      });
+    }
+
+    function renderRoomContent(roomKey) {
+      const container = document.getElementById('room-content');
+      container.innerHTML = '';
+
+      const assignedGuest = state.roomAssignments[roomKey];
+      let guestHTML = '';
+
+      if (assignedGuest) {
+        const disX = state.interrogatedSuspects.has(assignedGuest.id) ? 'disabled' : '';
+        const disPuz = state.completedActions.has(assignedGuest.id.toLowerCase() + '_unmask') ? 'disabled' : '';
+        guestHTML = `
+          <div class="encounter-panel">
+            <div class="encounter-title">${assignedGuest.persona}</div>
+            <div class="dialogue-text">A solitary figure lingers amidst the shadows, clutching their mask against the flickering candlelight.</div>
+            <div class="action-btn-row">
+              <button class="btn-burgundy" ${disX} onclick="crossExamine('${assignedGuest.id}', '${assignedGuest.persona}')">
+                ${disX ? 'Interrogation Concluded' : 'Cross-Examine Persona'}
+              </button>
+              <button ${disPuz} onclick="openSuspectPuzzle('${assignedGuest.id}')">
+                ${disPuz ? 'Identity Solved' : 'Decipher Dropped Disguise Clue'}
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      let puzzleHTML = '';
+      if (roomKey === 'Ballroom') {
+        const disPunch = state.completedActions.has('punchbowl') ? 'disabled' : '';
+        puzzleHTML = `
+          <div class="encounter-panel">
+            <div class="encounter-title">The Shattered Punch Bowl (Puzzle Lock)</div>
+            <div class="dialogue-text">A chemical cipher tag is taped beneath a shattered crystal glass fragment near the hearth.</div>
+            <div class="action-btn-row">
+              <button ${disPunch} onclick="openPunchbowlPuzzle()">
+                ${disPunch ? 'Alkaloid Deciphered' : 'Decipher Spilled Alkaloid Trace'}
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (roomKey === 'Conservatory') {
+        const disGreenhouse = state.completedActions.has('greenhouse_puzzle') ? 'disabled' : '';
+        puzzleHTML = `
+          <div class="encounter-panel">
+            <div class="encounter-title">The Exotic Orchid Planter (Puzzle Lock)</div>
+            <div class="dialogue-text">A botanical dial lock seals the glass terrarium containing clipped toxic winter flora.</div>
+            <div class="action-btn-row">
+              <button ${disGreenhouse} onclick="openGreenhousePuzzle()">
+                ${disGreenhouse ? 'Terrarium Lock Solved' : 'Crack Terrarium Dial Lock'}
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (roomKey === 'Library') {
+        const disLedger = state.completedActions.has('ledger_puzzle') ? 'disabled' : '';
+        puzzleHTML = `
+          <div class="encounter-panel">
+            <div class="encounter-title">Richard's Locked Desk Drawer (Puzzle Lock)</div>
+            <div class="dialogue-text">A cipher-coded brass padlock fastens Lord Richard's personal loan and blackmail ledger.</div>
+            <div class="action-btn-row">
+              <button ${disLedger} onclick="openLibraryLedgerPuzzle()">
+                ${disLedger ? 'Padlock Decrypted' : 'Decipher Desk Padlock Cipher'}
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (roomKey === 'Mezzanine') {
+        const disCrime = state.completedActions.has('crime_scene') ? 'disabled' : '';
+        const disFloorPuz = state.completedActions.has('floor_puzzle') ? 'disabled' : '';
+        puzzleHTML = `
+          <div class="encounter-panel">
+            <div class="encounter-title">The Slumped Body of Lord Richard</div>
+            <div class="dialogue-text">Slumped in his high-backed chair, clenching a severed silk ribbon in his stiffening grip.</div>
+            <div class="action-btn-row">
+              <button class="btn-burgundy" ${disCrime} onclick="inspectCrimeScene()">
+                ${disCrime ? 'Autopsy Trauma Logged' : "Perform Forensic Examination on Body"}
+              </button>
+            </div>
+          </div>
+          <div class="encounter-panel">
+            <div class="encounter-title">Balustrade Floorboards (Puzzle Lock)</div>
+            <div class="dialogue-text">A bloodstained cipher grid is scratched beside the fallen wine goblet where the strike occurred.</div>
+            <div class="action-btn-row">
+              <button ${disFloorPuz} onclick="openFloorTracePuzzle()">
+                ${disFloorPuz ? 'Balustrade Trace Solved' : 'Decipher Balustrade Grid Lock'}
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (roomKey === 'BallroomFinal') {
+        puzzleHTML = `
+          <div class="encounter-panel">
+            <div class="encounter-title">The Final Assembly</div>
+            <div class="dialogue-text">Every masked guest has gathered under the great hearth. <em>'The game is up.'</em> You have unmasked the suspects, tracked the physical clues, and verified the autopsy trauma. Deliver your deduction.</div>
+            <div class="action-btn-row">
+              <button class="btn-burgundy" style="width:100%; padding:14px;" onclick="openAccuseModal()">Deliver Formal Accusation</button>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = guestHTML + puzzleHTML;
+    }
+
+    // --- 8. SUSPECT UNMASKING & PROFILE VIEWER ---
+    function openSuspectPuzzle(suspectKey) {
+      const bank = TIERED_PUZZLE_BANKS[suspectKey];
+      if (!bank) return;
+
+      const puz = bank[state.difficulty] || bank.easy;
+
+      setupPuzzleModal({
+        title: puz.title,
+        prompt: puz.prompt,
+        solution: puz.solution,
+        hints: puz.hints,
+        onSuccess: () => {
+          state.completedActions.add(suspectKey.toLowerCase() + '_unmask');
+          markSuspectUnmasked(suspectKey, `${puz.solution}`);
+          showDossierProfileModal(suspectKey);
+          renderRoomContent(state.currentRoom);
+        }
+      });
+    }
+
+    function inspectSuspectFromRoster(suspectId, persona) {
+      const row = document.getElementById(`roster-${suspectId}`);
+      if (row && row.classList.contains('unmasked')) {
+        showDossierProfileModal(suspectId);
+      } else {
+        showModal(`Dossier File: ${persona}`, `To unmask ${persona}, locate them or their dropped personal effects as you journey through the ten wings of Blackwood Manor.`);
+      }
+    }
+
+    function showDossierProfileModal(suspectId) {
+      const profile = SUSPECT_PROFILES[suspectId];
+      if (!profile) return;
+
+      const content = `
+        <div style="border-left: 3px solid var(--autumn-gold); padding-left: 12px; margin-bottom: 14px;">
+          <div style="font-family: var(--font-display); font-size: 1.1rem; color: var(--autumn-gold);">${profile.trueName}</div>
+          <div style="font-size: 0.8rem; color: var(--autumn-amber); font-style: italic;">Unmasked Society Identity</div>
+        </div>
+        <p style="margin-bottom: 14px;"><strong>Costume & Attire:</strong><br>${profile.outfit}</p>
+        <div class="end-quote" style="margin-bottom: 16px;">
+          "${profile.quote}"
+        </div>
+      `;
+      showModal("Dossier Profile", content);
+    }
+
+    // --- 9. PUZZLE-LOCKED FORENSIC EVIDENCE (DYNAMIC BANKS) ---
+    function inspectCrimeScene() {
+      state.completedActions.add('crime_scene');
+      const killerData = KILLER_CONFIGS[state.actualKiller];
+      logForensicEvidence(`Autopsy Finding: ${killerData.bodyClue}`);
+      showModal("Forensic Examination on Lord Richard", `<strong>Medical Finding:</strong><br>${killerData.bodyClue}<br><br><em>(Logged into your Forensic Autopsy Log).</em>`);
+      renderRoomContent(state.currentRoom);
+    }
+
+    function openPunchbowlPuzzle() {
+      const puz = state.assignedHotspotPuzzles.punchbowl;
+      setupPuzzleModal({
+        title: puz.title,
+        prompt: puz.prompt,
+        solution: puz.solution,
+        hints: puz.hints,
+        onSuccess: () => {
+          state.completedActions.add('punchbowl');
+          logForensicEvidence(puz.logText);
+          showModal("Forensic Evidence Decrypted", `You decoded the chemical compound! The autopsy log notes: "${puz.logText}"`);
+          renderRoomContent(state.currentRoom);
+        }
+      });
+    }
+
+    function openGreenhousePuzzle() {
+      const puz = state.assignedHotspotPuzzles.terrarium;
+      setupPuzzleModal({
+        title: puz.title,
+        prompt: puz.prompt,
+        solution: puz.solution,
+        hints: puz.hints,
+        onSuccess: () => {
+          state.completedActions.add('greenhouse_puzzle');
+          logForensicEvidence(puz.logText);
+          showModal("Terrarium Lock Cracker", `The lock springs open! You log into evidence: "${puz.logText}"`);
+          renderRoomContent(state.currentRoom);
+        }
+      });
+    }
+
+    function openLibraryLedgerPuzzle() {
+      const puz = state.assignedHotspotPuzzles.ledger;
+      setupPuzzleModal({
+        title: puz.title,
+        prompt: puz.prompt,
+        solution: puz.solution,
+        hints: puz.hints,
+        onSuccess: () => {
+          state.completedActions.add('ledger_puzzle');
+          logForensicEvidence(puz.logText);
+          showModal("Richard's Drawer Unlocked", `The drawer springs open! You discover: "${puz.logText}"`);
+          renderRoomContent(state.currentRoom);
+        }
+      });
+    }
+
+    function openFloorTracePuzzle() {
+      const killerData = KILLER_CONFIGS[state.actualKiller];
+      setupPuzzleModal({
+        title: "Balustrade Grid Cipher (Skip Cipher)",
+        prompt: "Scratched into the mahogany rail is a coded coordinate string: T R R E A C C E. Extract alternating letters (1, 3, 5, 7) to reveal what physical trace lies beneath the baluster.",
+        solution: "TRAC",
+        hints: ["Take T, skip R, take R, skip E, take A, skip C, take C... spells TRAC.", "Four letters: T-R-A-C.", "Enter TRAC."],
+        onSuccess: () => {
+          state.completedActions.add('floor_puzzle');
+          logForensicEvidence(`Balustrade Trace: ${killerData.groundClue}`);
+          showModal("Balustrade Trace Unlocked", `<strong>Physical Evidence Decrypted:</strong><br>${killerData.groundClue}<br><br><em>(Logged into your Forensic Autopsy Log to match against the culprit).</em>`);
+          renderRoomContent(state.currentRoom);
+        }
+      });
+    }
+
+    // --- 10. LIMITED INTERROGATIONS ---
+    function crossExamine(suspectKey, suspectPersona) {
+      if (state.crossExamsLeft <= 0) {
+        showModal("Interrogations Exhausted", "You have used your 4 formal cross-examinations. <em>'The silence often of pure innocence persuades when speaking fails.'</em> The remaining assembly refuses to speak further without magistrates.");
+        return;
+      }
+
+      state.crossExamsLeft--;
+      state.interrogatedSuspects.add(suspectKey);
+      document.getElementById('hud-cross').textContent = `Interviews: ${state.crossExamsLeft} Left`;
+
+      if (suspectKey === 'Helena') {
+        showModal(`Interrogation: ${suspectPersona}`, "The feathered mask tilts coldly: <em>'Our remedies oft in ourselves do lie which we ascribe to heaven.'</em> Appraise my movements all you like. Richard threatened to declare my reliquary a counterfeit, yes... but I was inspecting the vitrine locks when the waltz stopped. If you want proof of my name, decipher the clue I dropped!");
+      } else if (suspectKey === 'Benedick') {
+        showModal(`Interrogation: ${suspectPersona}`, "The horned figure snorts dryly: <em>'I will live a bachelor.'</em> I did not strike Richard, despite the debt notes he held. Look at the dance card on the flagstones if you want to know who was scheduled to dance with him at midnight!");
+      } else if (suspectKey === 'Viola') {
+        showModal(`Interrogation: ${suspectPersona}`, "The lace-draped guest smooths her sleeves: <em>'I am not what I am.'</em> Couriers carry secrets, sir, not daggers. Richard intercepted three letters of mine, but my business was with the host alive, not cold on the mezzanine stairs.");
+      } else if (suspectKey === 'Katherina') {
+        showModal(`Interrogation: ${suspectPersona}`, "The siren clutches her throat: <em>'I see a woman may be made a fool, if she had not a spirit to resist!'</em> I screamed because I saw a shadow cross the mezzanine landing right before the lights were extinguished! My stage contract was unbearable, but I did not kill him!");
+      } else if (suspectKey === 'Petruchio') {
+        showModal(`Interrogation: ${suspectPersona}`, "The copper hood grins roughly: <em>'Think you a little din can daunt mine ears? Have I not in my time heard lions roar?'</em> I surveyed the estate foundations. The secret passage under the study has an exit onto the sea rocks. But someone beat me to Richard before I could confront him.");
+      } else if (suspectKey === 'Orlando') {
+        showModal(`Interrogation: ${suspectPersona}`, "The steel visor rattles with low iron: <em>'I will chide no breather in the world but myself, against whom I know most faults.'</em> A soldier does not poison a goblet or tamper with a chandelier. My missing dagger was taken from my quarters hours before the ball began.");
+      } else if (suspectKey === 'Bertram') {
+        showModal(`Interrogation: ${suspectPersona}`, "The brass lenses stare unblinkingly: <em>'A poor physician's patient hath no need of medicine if the heart be true.'</em> Richard was blackmailing me over maritime hospital supplies. Yet his pupils show classical signs of acute neurotoxin, not surgical instruments.");
+      } else if (suspectKey === 'Rosalind') {
+        showModal(`Interrogation: ${suspectPersona}`, "The diamond collar rattles softly: <em>'Time travels in divers paces with divers persons.'</em> Listen to the acoustics of the ballroom. The scream on the stairs came two beats before the fuse blew. Someone planned that darkness down to the exact second.");
+      } else if (suspectKey === 'Orsino') {
+        showModal(`Interrogation: ${suspectPersona}`, "The Frost King sighs with chilly aristocratic detachment: <em>'So full of shapes is fancy, that it alone is high fantastical.'</em> Richard possessed letters that belonged to the sanctuary of the heart. I would have paid his ransom; I had no cause to see him slain.");
+      } else if (suspectKey === 'Beatrice') {
+        showModal(`Interrogation: ${suspectPersona}`, "The porcelain mask tilts sharply: <em>'There is a kind of merry war betwixt Signior Benedick and me; they never meet but there’s a skirmish of wit.'</em> If I desired Richard dead, sir, I would have used plain speech to wither him in public view. A dagger or toxin is far too cowardly a weapon for my taste.");
+      }
+
+      renderRoomContent(state.currentRoom);
+    }
+
+    // Modal Handling with Sanitized Input, ENTER Key & ESC Key Support
+    function setupPuzzleModal(config) {
+      state.activePuzzle = config;
+      state.hintsViewed = 0;
+      document.getElementById('puz-title').textContent = config.title;
+      document.getElementById('puz-prompt').textContent = config.prompt;
+      
+      const input = document.getElementById('puz-input');
+      input.value = '';
+      
+      const hintBox = document.getElementById('puz-hint-box');
+      hintBox.style.display = 'none';
+      hintBox.textContent = '';
+      
+      document.getElementById('puzzle-modal').classList.add('active');
+      input.focus();
+    }
+
+    document.getElementById('puz-input').addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        submitPuzzleSolution();
+      }
+    });
+
+    window.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeModal('puzzle-modal');
+        closeModal('accuse-modal');
+      }
+    });
+
+    function revealHint() {
+      if (!state.activePuzzle) return;
+      const hero = PROTAGONISTS[state.heroKey];
+      
+      let maxHints = (state.difficulty === 'easy') ? 1 : (state.difficulty === 'medium' ? 2 : 3);
+      if (hero.alias === 'Beatrice') maxHints += 1;
+
+      if (state.hintsViewed < maxHints && state.hintsViewed < state.activePuzzle.hints.length) {
+        const hintText = state.activePuzzle.hints[state.hintsViewed];
+        state.hintsViewed++;
+        const hintBox = document.getElementById('puz-hint-box');
+        hintBox.style.display = 'block';
+        hintBox.textContent = `Note ${state.hintsViewed}: ${hintText}`;
+      } else {
+        alert("No further notes can be extracted on this puzzle tier.");
+      }
+    }
+
+    function submitPuzzleSolution() {
+      if (!state.activePuzzle) return;
+      const val = document.getElementById('puz-input').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const expected = state.activePuzzle.solution.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+      if (val === expected) {
+        closeModal('puzzle-modal');
+        state.activePuzzle.onSuccess();
+        state.activePuzzle = null;
+      } else {
+        state.lives--;
+        updateLivesDisplay();
+
+        if (state.difficulty === 'hard') {
+          state.timerSeconds -= 60;
+          updateTimerDisplay();
+        }
+
+        if (state.lives <= 0) {
+          closeModal('puzzle-modal');
+          triggerCaughtScreen("You exhausted your final life. Your clumsy deductions drew the suspicious eyes of every guest. Before you could clear your name, the constables discovered Lord Richard's forged notes planted in your evening coat. You are going straight to jail.");
+        } else {
+          alert(`The deduction fails to reconcile with the evidence! You lost a life (${state.lives} remaining).`);
+        }
+      }
+    }
+
+    function useHeroAbility() {
+      const hero = PROTAGONISTS[state.heroKey];
+      if (hero.abilityUsed) {
+        alert("Your persona perk has already been exercised during this gala.");
+        return;
+      }
+
+      if (hero.alias === 'Helena') {
+        hero.abilityUsed = true;
+        markSuspectUnmasked('Helena', 'Helena (Countess Vane)');
+        markSuspectUnmasked('Viola', 'Viola (The Silk Spider)');
+        showModal("Appraiser's Eye Exercised", "Helena's sharp appraisal instantly identifies both her own discarded seal and Viola's silk lace, unmasking both in the dossier!");
+      } else if (hero.alias === 'Rosalind') {
+        hero.abilityUsed = true;
+        showModal("Harmonic Cadence Exercised", "Rosalind hums the waltz tempo: 'The footsteps fleeing the mezzanine were swift and light—completely clearing Orlando's heavy iron armor and Petruchio's stone stride!'");
+      } else if (hero.alias === 'Bertram') {
+        hero.abilityUsed = true;
+        showModal("Apothecary's Insight Exercised", "Dr. Bertram analyzes the claret wine residue: 'Spilled goblets reveal high concentrations of alkaloids—confirming chemical or botanical poisoning!'");
+      } else {
+        alert("Your passive perk is already actively applied to your timer or hints.");
+      }
+    }
+
+    function openAccuseModal() {
+      document.getElementById('accuse-modal').classList.add('active');
+    }
+
+    function confirmAccusation() {
+      const suspect = document.getElementById('accuse-suspect').value;
+      const weapon = document.getElementById('accuse-weapon').value;
+
+      if (!suspect || !weapon) {
+        alert("You must name both a culprit and the murder mechanism.");
+        return;
+      }
+
+      closeModal('accuse-modal');
+      const correctKiller = KILLER_CONFIGS[state.actualKiller];
+
+      if (suspect === correctKiller.suspect && weapon === correctKiller.weapon) {
+        triggerWinScreen(correctKiller);
+      } else {
+        triggerWrongfulConvictionScreen(`You formally accused ${suspect} using ${weapon}. The autopsy findings and forensic traces directly contradicted your theory. The true murderer slipped into the storm while you took the blame.`);
+      }
+    }
+
+    function triggerWinScreen(killerObj) {
+      if (state.timerInterval) clearInterval(state.timerInterval);
+      document.getElementById('screen-game').classList.remove('active');
+      const win = document.getElementById('screen-win');
+      document.getElementById('win-text').innerHTML = `
+        <p><strong>In the center of the Grand Ballroom, the truth is laid bare before the assembled guests.</strong></p>
+        <div class="end-quote">
+          ${killerObj.confession}
+        </div>
+        <p>Before the clock struck midnight, you navigated all ten wings of Blackwood Manor, decoded every disguise, and brought the true murderer to justice. <em>'Thus the whirligig of time brings in his revenges.'</em></p>
+      `;
+      win.classList.add('active');
+    }
+
+    function triggerWrongfulConvictionScreen(reason) {
+      if (state.timerInterval) clearInterval(state.timerInterval);
+      document.getElementById('screen-game').classList.remove('active');
+      const fail = document.getElementById('screen-fail');
+      const actual = KILLER_CONFIGS[state.actualKiller];
+      document.getElementById('fail-text').innerHTML = `
+        <p>${reason}</p>
+        <div class="end-quote" style="border-left-color:var(--autumn-amber);">
+          <strong>The Truth of This Run:</strong> The true murderer was <strong>${actual.suspectTitle}</strong> utilizing <strong>${actual.weapon}</strong>.<br><br>
+          <em>Cause of Death:</em> ${actual.bodyClue}
+        </div>
+        <p>Your reputation lies in ruins as the constables escort you into the storm. <em>'O, what men dare do! what men may do! what men daily do, not knowing what they do!'</em></p>
+      `;
+      fail.classList.add('active');
+    }
+
+    function triggerCaughtScreen(reason) {
+      if (state.timerInterval) clearInterval(state.timerInterval);
+      document.getElementById('screen-game').classList.remove('active');
+      const caught = document.getElementById('screen-caught');
+      const actual = KILLER_CONFIGS[state.actualKiller];
+      document.getElementById('caught-text').innerHTML = `
+        <p style="font-size:1.05rem; margin-bottom:16px;"><strong>The Midnight Grandfather Clock Strikes Twelve.</strong></p>
+        <p>${reason}</p>
+        <div class="end-quote" style="border-left-color:#8c2d19; background:rgba(20, 8, 8, 0.7);">
+          <em>The constables search your person and produce Lord Richard's forged railroad debt notes and letters. Handcuffs click tightly around your wrists. While the true killer—<strong>${actual.suspectTitle}</strong>—smiles behind their disguise and disappears into the rain, you are marched into the iron carriage bound for the county gaol.</em>
+        </div>
+        <p><em>'Wisely and slow; they stumble that run fast.'</em> You ran out of chances, and the trap closed around you.</p>
+      `;
+      caught.classList.add('active');
+    }
+
+    function showModal(title, text) {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay active';
+      overlay.innerHTML = `
+        <div class="modal-box">
+          <h2>${title}</h2>
+          <div>${text}</div>
+          <button class="btn-burgundy" style="width:100%; margin-top:14px;" onclick="this.closest('.modal-overlay').remove()">Dismiss (ESC)</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+  </script>
+</body>
+</html>
